@@ -17,6 +17,7 @@ import ClienteDetail from "@/pages/ClienteDetail";
 import Parcelas from "@/pages/Parcelas";
 import Catalogo from "@/pages/Catalogo";
 import Configuracoes from "@/pages/Configuracoes";
+import CatalogoPublico from "@/pages/CatalogoPublico";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -124,6 +125,8 @@ function AppRouter() {
             <Route path="/parcelas" component={() => <ProtectedRoute component={Parcelas} />} />
             <Route path="/catalogo" component={() => <ProtectedRoute component={Catalogo} />} />
             <Route path="/configuracoes" component={() => <ProtectedRoute component={Configuracoes} />} />
+
+            <Route path="/loja/:slug" component={CatalogoPublico} />
 
             <Route component={NotFound} />
           </Switch>

@@ -8,10 +8,12 @@ import produtosRouter from "./produtos";
 import categoriasRouter from "./categorias";
 import configuracoesRouter from "./configuracoes";
 import promissoriaRouter from "./promissoria";
+import catalogoPublicoRouter from "./catalogoPublico";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(catalogoPublicoRouter);
 router.use(dashboardRouter);
 router.use(vendasRouter);
 router.use(clientesRouter);

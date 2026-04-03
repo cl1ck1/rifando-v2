@@ -52,6 +52,7 @@ Brazilian SaaS platform for ambulant door-to-door salespeople and commercial rep
 - `/parcelas` — Installment management with status filters, receive payment by method (pix/dinheiro/cartao/promissoria)
 - `/catalogo` — Product catalog with categories, cost/sale price, stock, margin calculation
 - `/configuracoes` — Account settings (business name, whatsapp, pix key, catalog)
+- `/loja/:slug` — Public virtual catalog (no auth required), shows products with search, category filters, WhatsApp deep links
 
 ## Key Commands
 
@@ -74,6 +75,8 @@ Rifeiros are ambulant salespeople who:
 4. Main customers: women and resellers who buy for personal use or resale
 5. Deliver products to customer's home address
 
+### Public API (no auth)
+- `GET /api/catalogo/:slug` — Returns store info, categories, and active products for a given catalog slug. Returns 404 if slug not found or catalog disabled.
+
 ## Pending Tasks
-- Task #3: Public virtual catalog page per rifeiro
 - Task #4: WhatsApp AI sales bot (needs user-provided WhatsApp API credentials)
