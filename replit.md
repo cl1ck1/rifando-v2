@@ -52,7 +52,7 @@ Brazilian SaaS platform for ambulant door-to-door salespeople and commercial rep
 - `/parcelas` — Installment management with status filters, receive payment by method (pix/dinheiro/cartao/promissoria)
 - `/catalogo` — Product catalog with categories, cost/sale price, stock, margin calculation
 - `/configuracoes` — Account settings (business name, whatsapp, pix key, catalog)
-- `/loja/:slug` — Public virtual catalog (no auth required), shows products with search, category filters, WhatsApp deep links
+- `/catalogo/:slug` — Public virtual catalog (no auth required), shows products with search, category filters, WhatsApp deep links, auto-refreshes every 60s
 
 ## Key Commands
 

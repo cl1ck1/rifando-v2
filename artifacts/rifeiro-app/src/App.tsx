@@ -126,7 +126,7 @@ function AppRouter() {
             <Route path="/catalogo" component={() => <ProtectedRoute component={Catalogo} />} />
             <Route path="/configuracoes" component={() => <ProtectedRoute component={Configuracoes} />} />
 
-            <Route path="/loja/:slug" component={CatalogoPublico} />
+            <Route path="/catalogo/:slug" component={CatalogoPublico} />
 
             <Route component={NotFound} />
           </Switch>

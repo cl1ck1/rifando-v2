@@ -18,6 +18,7 @@ import type {
 
 import type {
   ActivityItem,
+  CatalogoPublicoResponse,
   Categoria,
   Cliente,
   ClienteHistory,
@@ -27,6 +28,7 @@ import type {
   CreateProdutoBody,
   CreateVendaBody,
   DashboardSummary,
+  GetCatalogoPublico404,
   GetRecentActivityParams,
   GetTopCustomersParams,
   HealthStatus,
@@ -124,6 +126,94 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get public virtual catalog by slug (no auth)
+ */
+export const getGetCatalogoPublicoUrl = (slug: string) => {
+  return `/api/catalogo/${slug}`;
+};
+
+export const getCatalogoPublico = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<CatalogoPublicoResponse> => {
+  return customFetch<CatalogoPublicoResponse>(getGetCatalogoPublicoUrl(slug), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCatalogoPublicoQueryKey = (slug: string) => {
+  return [`/api/catalogo/${slug}`] as const;
+};
+
+export const getGetCatalogoPublicoQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCatalogoPublico>>,
+  TError = ErrorType<GetCatalogoPublico404>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCatalogoPublico>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetCatalogoPublicoQueryKey(slug);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCatalogoPublico>>
+  > = ({ signal }) => getCatalogoPublico(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCatalogoPublico>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCatalogoPublicoQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCatalogoPublico>>
+>;
+export type GetCatalogoPublicoQueryError = ErrorType<GetCatalogoPublico404>;
+
+/**
+ * @summary Get public virtual catalog by slug (no auth)
+ */
+
+export function useGetCatalogoPublico<
+  TData = Awaited<ReturnType<typeof getCatalogoPublico>>,
+  TError = ErrorType<GetCatalogoPublico404>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCatalogoPublico>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCatalogoPublicoQueryOptions(slug, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

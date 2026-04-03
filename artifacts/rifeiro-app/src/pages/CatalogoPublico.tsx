@@ -199,11 +199,13 @@ export default function CatalogoPublico() {
   const [search, setSearch] = useState("");
   const [selectedCategoria, setSelectedCategoria] = useState<number | null>(null);
 
-  useEffect(() => {
+  const fetchCatalog = (isRefresh = false) => {
     if (!slug) return;
-    setLoading(true);
-    setNotFound(false);
-    setServerError(false);
+    if (!isRefresh) {
+      setLoading(true);
+      setNotFound(false);
+      setServerError(false);
+    }
 
     fetch(`${BASE}/api/catalogo/${encodeURIComponent(slug)}`)
       .then((res) => {
@@ -213,7 +215,7 @@ export default function CatalogoPublico() {
           return null;
         }
         if (!res.ok) {
-          setServerError(true);
+          if (!isRefresh) setServerError(true);
           setLoading(false);
           return null;
         }
@@ -226,14 +228,24 @@ export default function CatalogoPublico() {
         setLoading(false);
       })
       .catch(() => {
-        setServerError(true);
+        if (!isRefresh) setServerError(true);
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchCatalog();
   }, [slug]);
+
+  useEffect(() => {
+    if (!data || notFound || serverError) return;
+    const interval = setInterval(() => fetchCatalog(true), 60000);
+    return () => clearInterval(interval);
+  }, [slug, data, notFound, serverError]);
 
   if (loading) return <LoadingSkeleton />;
   if (notFound) return <LojaNotFound />;
-  if (serverError || !data) return <ServerErrorView onRetry={() => { setServerError(false); setLoading(true); fetch(`${BASE}/api/catalogo/${encodeURIComponent(slug || "")}`).then((r) => { if (r.status === 404) { setNotFound(true); setLoading(false); return null; } if (!r.ok) { setServerError(true); setLoading(false); return null; } return r.json(); }).then((j) => { if (j) setData(j); setLoading(false); }).catch(() => { setServerError(true); setLoading(false); }); }} />;
+  if (serverError || !data) return <ServerErrorView onRetry={() => fetchCatalog()} />;
 
   const { loja, categorias, produtos } = data;
 

@@ -24,6 +24,8 @@ tags:
     description: Product categories
   - name: configuracoes
     description: Account settings
+  - name: catalogo-publico
+    description: Public virtual catalog (no auth)
 
 paths:
   /healthz:
@@ -38,6 +40,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Catalogo Publico ───────────────────────────────
+  /catalogo/{slug}:
+    get:
+      operationId: getCatalogoPublico
+      tags: [catalogo-publico]
+      summary: Get public virtual catalog by slug (no auth)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Catalog data with store info, categories, and products
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogoPublicoResponse"
+        "404":
+          description: Store not found or catalog disabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 
   # ── Dashboard ──────────────────────────────────────
   /dashboard/summary:
@@ -1096,3 +1127,74 @@ components:
           type: string
         mensagemBoasVindas:
           type: string
+
+    CatalogoPublicoLoja:
+      type: object
+      required: [nomeNegocio]
+      properties:
+        nomeNegocio:
+          type: string
+        logoUrl:
+          type: string
+          nullable: true
+        cidade:
+          type: string
+          nullable: true
+        estado:
+          type: string
+          nullable: true
+        telefoneWhatsapp:
+          type: string
+          nullable: true
+        mensagemBoasVindas:
+          type: string
+          nullable: true
+
+    CatalogoPublicoProduto:
+      type: object
+      required: [id, nome, precoVenda, estoque]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+        precoVenda:
+          type: number
+        imagemUrl:
+          type: string
+          nullable: true
+        categoriaId:
+          type: integer
+          nullable: true
+        categoriaNome:
+          type: string
+          nullable: true
+        estoque:
+          type: integer
+
+    CatalogoPublicoCategoria:
+      type: object
+      required: [id, nome]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+
+    CatalogoPublicoResponse:
+      type: object
+      required: [loja, categorias, produtos]
+      properties:
+        loja:
+          $ref: "#/components/schemas/CatalogoPublicoLoja"
+        categorias:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogoPublicoCategoria"
+        produtos:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogoPublicoProduto"

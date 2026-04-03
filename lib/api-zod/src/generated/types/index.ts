@@ -8,6 +8,10 @@
 
 export * from "./activityItem";
 export * from "./activityItemType";
+export * from "./catalogoPublicoCategoria";
+export * from "./catalogoPublicoLoja";
+export * from "./catalogoPublicoProduto";
+export * from "./catalogoPublicoResponse";
 export * from "./categoria";
 export * from "./cliente";
 export * from "./clienteHistory";
@@ -21,6 +25,7 @@ export * from "./createVendaBody";
 export * from "./createVendaBodyFormaPagamento";
 export * from "./createVendaBodyItensItem";
 export * from "./dashboardSummary";
+export * from "./getCatalogoPublico404";
 export * from "./getRecentActivityParams";
 export * from "./getTopCustomersParams";
 export * from "./healthStatus";

@@ -15,6 +15,42 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary Get public virtual catalog by slug (no auth)
+ */
+export const GetCatalogoPublicoParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const GetCatalogoPublicoResponse = zod.object({
+  loja: zod.object({
+    nomeNegocio: zod.string(),
+    logoUrl: zod.string().nullish(),
+    cidade: zod.string().nullish(),
+    estado: zod.string().nullish(),
+    telefoneWhatsapp: zod.string().nullish(),
+    mensagemBoasVindas: zod.string().nullish(),
+  }),
+  categorias: zod.array(
+    zod.object({
+      id: zod.number(),
+      nome: zod.string(),
+    }),
+  ),
+  produtos: zod.array(
+    zod.object({
+      id: zod.number(),
+      nome: zod.string(),
+      descricao: zod.string().nullish(),
+      precoVenda: zod.number(),
+      imagemUrl: zod.string().nullish(),
+      categoriaId: zod.number().nullish(),
+      categoriaNome: zod.string().nullish(),
+      estoque: zod.number(),
+    }),
+  ),
+});
+
+/**
  * @summary Dashboard KPI summary
  */
 export const GetDashboardSummaryResponse = zod.object({

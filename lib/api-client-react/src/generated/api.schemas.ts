@@ -386,6 +386,41 @@ export interface UpdateConfiguracoesBody {
   mensagemBoasVindas?: string;
 }
 
+export interface CatalogoPublicoLoja {
+  nomeNegocio: string;
+  logoUrl?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+  telefoneWhatsapp?: string | null;
+  mensagemBoasVindas?: string | null;
+}
+
+export interface CatalogoPublicoProduto {
+  id: number;
+  nome: string;
+  descricao?: string | null;
+  precoVenda: number;
+  imagemUrl?: string | null;
+  categoriaId?: number | null;
+  categoriaNome?: string | null;
+  estoque: number;
+}
+
+export interface CatalogoPublicoCategoria {
+  id: number;
+  nome: string;
+}
+
+export interface CatalogoPublicoResponse {
+  loja: CatalogoPublicoLoja;
+  categorias: CatalogoPublicoCategoria[];
+  produtos: CatalogoPublicoProduto[];
+}
+
+export type GetCatalogoPublico404 = {
+  error?: string;
+};
+
 export type GetTopCustomersParams = {
   limit?: number;
 };
