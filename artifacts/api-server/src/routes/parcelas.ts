@@ -1,32 +1,42 @@
-import { Router } from "express";
+import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { parcelasTable, vendasTable, atividadesTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
+import {
+  ListParcelasQueryParams,
+  GetParcelaParams,
+  UpdateParcelaParams,
+  UpdateParcelaBody,
+} from "@workspace/api-zod";
 
-const router = Router();
+const router: IRouter = Router();
 
-router.get("/parcelas", requireAuth, async (req, res) => {
+router.get("/parcelas", requireAuth, async (req, res): Promise<void> => {
   const { userId } = req as AuthRequest;
-  const { status, clienteId, vendaId } = req.query;
-
-  let conditions = [eq(parcelasTable.userId, userId)];
-
-  if (status && typeof status === "string") {
-    conditions.push(eq(parcelasTable.status, status));
+  const query = ListParcelasQueryParams.safeParse(req.query);
+  if (!query.success) {
+    res.status(400).json({ error: query.error.message });
+    return;
   }
-  if (clienteId && typeof clienteId === "string") {
-    conditions.push(eq(parcelasTable.clienteId, parseInt(clienteId, 10)));
+
+  const conditions = [eq(parcelasTable.userId, userId)];
+
+  if (query.data.status) {
+    conditions.push(eq(parcelasTable.status, query.data.status));
   }
-  if (vendaId && typeof vendaId === "string") {
-    conditions.push(eq(parcelasTable.vendaId, parseInt(vendaId, 10)));
+  if (query.data.clienteId) {
+    conditions.push(eq(parcelasTable.clienteId, query.data.clienteId));
+  }
+  if (query.data.vendaId) {
+    conditions.push(eq(parcelasTable.vendaId, query.data.vendaId));
   }
 
   const parcelas = await db.select().from(parcelasTable)
     .where(and(...conditions))
     .orderBy(sql`${parcelasTable.dataVencimento} ASC`);
 
-  const mapped = parcelas.map((p) => ({
+  res.json(parcelas.map((p) => ({
     id: p.id,
     vendaId: p.vendaId,
     clienteId: p.clienteId,
@@ -40,14 +50,17 @@ router.get("/parcelas", requireAuth, async (req, res) => {
     metodoPagamento: p.metodoPagamento,
     status: p.status,
     createdAt: p.createdAt.toISOString(),
-  }));
-
-  res.json(mapped);
+  })));
 });
 
-router.get("/parcelas/:id", requireAuth, async (req, res) => {
+router.get("/parcelas/:id", requireAuth, async (req, res): Promise<void> => {
   const { userId } = req as AuthRequest;
-  const id = parseInt(req.params.id, 10);
+  const params = GetParcelaParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const { id } = params.data;
 
   const results = await db.select().from(parcelasTable)
     .where(and(eq(parcelasTable.id, id), eq(parcelasTable.userId, userId)))
@@ -76,9 +89,20 @@ router.get("/parcelas/:id", requireAuth, async (req, res) => {
   });
 });
 
-router.patch("/parcelas/:id", requireAuth, async (req, res) => {
+router.patch("/parcelas/:id", requireAuth, async (req, res): Promise<void> => {
   const { userId } = req as AuthRequest;
-  const id = parseInt(req.params.id, 10);
+  const params = UpdateParcelaParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const { id } = params.data;
+
+  const parsed = UpdateParcelaBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
 
   const existing = await db.select().from(parcelasTable)
     .where(and(eq(parcelasTable.id, id), eq(parcelasTable.userId, userId)))
@@ -90,15 +114,15 @@ router.patch("/parcelas/:id", requireAuth, async (req, res) => {
   }
 
   const updates: Record<string, string | number | null> = {};
-  if (req.body.status) updates.status = req.body.status;
-  if (req.body.dataPagamento) updates.dataPagamento = req.body.dataPagamento;
-  if (req.body.metodoPagamento) updates.metodoPagamento = req.body.metodoPagamento;
-  if (req.body.dataVencimento) updates.dataVencimento = req.body.dataVencimento;
-  if (req.body.valor !== undefined) updates.valor = Number(req.body.valor).toFixed(2);
+  if (parsed.data.status) updates.status = parsed.data.status;
+  if (parsed.data.dataPagamento) updates.dataPagamento = parsed.data.dataPagamento;
+  if (parsed.data.metodoPagamento) updates.metodoPagamento = parsed.data.metodoPagamento;
+  if (parsed.data.dataVencimento) updates.dataVencimento = parsed.data.dataVencimento;
+  if (parsed.data.valor !== undefined) updates.valor = Number(parsed.data.valor).toFixed(2);
 
   const [updated] = await db.update(parcelasTable).set(updates).where(eq(parcelasTable.id, id)).returning();
 
-  if (req.body.status === "paga") {
+  if (parsed.data.status === "paga") {
     await db.insert(atividadesTable).values({
       userId,
       type: "pagamento",

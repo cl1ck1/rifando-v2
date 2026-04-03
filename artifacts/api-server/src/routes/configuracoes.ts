@@ -1,12 +1,15 @@
-import { Router } from "express";
+import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { configuracoesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
+import {
+  UpdateConfiguracoesBody,
+} from "@workspace/api-zod";
 
-const router = Router();
+const router: IRouter = Router();
 
-router.get("/configuracoes", requireAuth, async (req, res) => {
+router.get("/configuracoes", requireAuth, async (req, res): Promise<void> => {
   const { userId } = req as AuthRequest;
 
   let results = await db.select().from(configuracoesTable)
@@ -33,10 +36,15 @@ router.get("/configuracoes", requireAuth, async (req, res) => {
   });
 });
 
-router.put("/configuracoes", requireAuth, async (req, res) => {
+router.put("/configuracoes", requireAuth, async (req, res): Promise<void> => {
   const { userId } = req as AuthRequest;
+  const parsed = UpdateConfiguracoesBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
 
-  let existing = await db.select().from(configuracoesTable)
+  const existing = await db.select().from(configuracoesTable)
     .where(eq(configuracoesTable.userId, userId))
     .limit(1);
 
@@ -45,15 +53,15 @@ router.put("/configuracoes", requireAuth, async (req, res) => {
   }
 
   const updates: Record<string, string | boolean | null> = {};
-  const fields = ["nomeNegocio", "telefoneWhatsapp", "logoUrl", "catalogoSlug", "cidade", "estado", "chavePix", "mensagemBoasVindas"] as const;
-  for (const field of fields) {
-    if (req.body[field] !== undefined) {
-      updates[field] = req.body[field];
-    }
-  }
-  if (req.body.catalogoAtivo !== undefined) {
-    updates.catalogoAtivo = req.body.catalogoAtivo;
-  }
+  if (parsed.data.nomeNegocio !== undefined) updates.nomeNegocio = parsed.data.nomeNegocio ?? null;
+  if (parsed.data.telefoneWhatsapp !== undefined) updates.telefoneWhatsapp = parsed.data.telefoneWhatsapp ?? null;
+  if (parsed.data.logoUrl !== undefined) updates.logoUrl = parsed.data.logoUrl ?? null;
+  if (parsed.data.catalogoSlug !== undefined) updates.catalogoSlug = parsed.data.catalogoSlug ?? null;
+  if (parsed.data.catalogoAtivo !== undefined) updates.catalogoAtivo = parsed.data.catalogoAtivo;
+  if (parsed.data.cidade !== undefined) updates.cidade = parsed.data.cidade ?? null;
+  if (parsed.data.estado !== undefined) updates.estado = parsed.data.estado ?? null;
+  if (parsed.data.chavePix !== undefined) updates.chavePix = parsed.data.chavePix ?? null;
+  if (parsed.data.mensagemBoasVindas !== undefined) updates.mensagemBoasVindas = parsed.data.mensagemBoasVindas ?? null;
 
   const [updated] = await db.update(configuracoesTable)
     .set(updates)

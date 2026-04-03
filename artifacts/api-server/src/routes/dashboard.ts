@@ -1,12 +1,16 @@
-import { Router } from "express";
+import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { vendasTable, clientesTable, parcelasTable, atividadesTable } from "@workspace/db";
 import { eq, sql, desc } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
+import {
+  GetTopCustomersQueryParams,
+  GetRecentActivityQueryParams,
+} from "@workspace/api-zod";
 
-const router = Router();
+const router: IRouter = Router();
 
-router.get("/dashboard/summary", requireAuth, async (req, res) => {
+router.get("/dashboard/summary", requireAuth, async (req, res): Promise<void> => {
   const { userId } = req as AuthRequest;
 
   const [vendaStats] = await db.select({
@@ -34,7 +38,7 @@ router.get("/dashboard/summary", requireAuth, async (req, res) => {
   });
 });
 
-router.get("/dashboard/revenue-by-month", requireAuth, async (req, res) => {
+router.get("/dashboard/revenue-by-month", requireAuth, async (req, res): Promise<void> => {
   const { userId } = req as AuthRequest;
 
   const rows = await db.select({
@@ -49,9 +53,10 @@ router.get("/dashboard/revenue-by-month", requireAuth, async (req, res) => {
   res.json(rows);
 });
 
-router.get("/dashboard/top-customers", requireAuth, async (req, res) => {
+router.get("/dashboard/top-customers", requireAuth, async (req, res): Promise<void> => {
   const { userId } = req as AuthRequest;
-  const limit = parseInt(req.query.limit as string) || 5;
+  const query = GetTopCustomersQueryParams.safeParse(req.query);
+  const limit = query.success ? query.data.limit : 5;
 
   const rows = await db.select({
     id: clientesTable.id,
@@ -68,9 +73,10 @@ router.get("/dashboard/top-customers", requireAuth, async (req, res) => {
   res.json(rows);
 });
 
-router.get("/dashboard/recent-activity", requireAuth, async (req, res) => {
+router.get("/dashboard/recent-activity", requireAuth, async (req, res): Promise<void> => {
   const { userId } = req as AuthRequest;
-  const limit = parseInt(req.query.limit as string) || 10;
+  const query = GetRecentActivityQueryParams.safeParse(req.query);
+  const limit = query.success ? query.data.limit : 10;
 
   const rows = await db.select().from(atividadesTable)
     .where(eq(atividadesTable.userId, userId))
@@ -85,7 +91,7 @@ router.get("/dashboard/recent-activity", requireAuth, async (req, res) => {
   })));
 });
 
-router.get("/dashboard/parcelas-atrasadas", requireAuth, async (req, res) => {
+router.get("/dashboard/parcelas-atrasadas", requireAuth, async (req, res): Promise<void> => {
   const { userId } = req as AuthRequest;
 
   const rows = await db.select().from(parcelasTable)

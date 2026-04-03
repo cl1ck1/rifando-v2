@@ -7,6 +7,7 @@ import parcelasRouter from "./parcelas";
 import produtosRouter from "./produtos";
 import categoriasRouter from "./categorias";
 import configuracoesRouter from "./configuracoes";
+import promissoriaRouter from "./promissoria";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(parcelasRouter);
 router.use(produtosRouter);
 router.use(categoriasRouter);
 router.use(configuracoesRouter);
+router.use(promissoriaRouter);
 
 export default router;

@@ -1,27 +1,40 @@
-import { Router } from "express";
+import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { vendasTable, vendaItensTable, parcelasTable, clientesTable, produtosTable, atividadesTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
+import {
+  ListVendasQueryParams,
+  CreateVendaBody,
+  GetVendaParams,
+  UpdateVendaParams,
+  UpdateVendaBody,
+  DeleteVendaParams,
+} from "@workspace/api-zod";
 
-const router = Router();
+const router: IRouter = Router();
 
-router.get("/vendas", requireAuth, async (req, res) => {
+router.get("/vendas", requireAuth, async (req, res): Promise<void> => {
   const { userId } = req as AuthRequest;
-  const { status, clienteId } = req.query;
-
-  let query = db.select().from(vendasTable).where(eq(vendasTable.userId, userId));
-
-  if (status && typeof status === "string") {
-    query = db.select().from(vendasTable).where(and(eq(vendasTable.userId, userId), eq(vendasTable.status, status)));
-  }
-  if (clienteId && typeof clienteId === "string") {
-    query = db.select().from(vendasTable).where(and(eq(vendasTable.userId, userId), eq(vendasTable.clienteId, parseInt(clienteId, 10))));
+  const query = ListVendasQueryParams.safeParse(req.query);
+  if (!query.success) {
+    res.status(400).json({ error: query.error.message });
+    return;
   }
 
-  const vendas = await query.orderBy(sql`${vendasTable.createdAt} DESC`);
+  const conditions = [eq(vendasTable.userId, userId)];
+  if (query.data.status) {
+    conditions.push(eq(vendasTable.status, query.data.status));
+  }
+  if (query.data.clienteId) {
+    conditions.push(eq(vendasTable.clienteId, query.data.clienteId));
+  }
 
-  const mapped = vendas.map((v) => ({
+  const vendas = await db.select().from(vendasTable)
+    .where(and(...conditions))
+    .orderBy(sql`${vendasTable.createdAt} DESC`);
+
+  res.json(vendas.map((v) => ({
     id: v.id,
     clienteId: v.clienteId,
     clienteNome: v.clienteNome,
@@ -33,16 +46,22 @@ router.get("/vendas", requireAuth, async (req, res) => {
     status: v.status,
     observacoes: v.observacoes,
     createdAt: v.createdAt.toISOString(),
-  }));
-
-  res.json(mapped);
+  })));
 });
 
-router.post("/vendas", requireAuth, async (req, res) => {
+router.post("/vendas", requireAuth, async (req, res): Promise<void> => {
   const { userId } = req as AuthRequest;
-  const { clienteId, itens, desconto, formaPagamento, numeroParcelas, observacoes } = req.body;
+  const parsed = CreateVendaBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
 
-  const cliente = await db.select().from(clientesTable).where(and(eq(clientesTable.id, clienteId), eq(clientesTable.userId, userId))).limit(1);
+  const { clienteId, itens, desconto, formaPagamento, numeroParcelas, observacoes } = parsed.data;
+
+  const cliente = await db.select().from(clientesTable)
+    .where(and(eq(clientesTable.id, clienteId), eq(clientesTable.userId, userId)))
+    .limit(1);
   if (cliente.length === 0) {
     res.status(404).json({ error: "Cliente nao encontrado" });
     return;
@@ -52,7 +71,9 @@ router.post("/vendas", requireAuth, async (req, res) => {
   const resolvedItens: Array<{ produtoId: number; produtoNome: string; quantidade: number; precoUnitario: number; subtotal: number }> = [];
 
   for (const item of itens) {
-    const produto = await db.select().from(produtosTable).where(and(eq(produtosTable.id, item.produtoId), eq(produtosTable.userId, userId))).limit(1);
+    const produto = await db.select().from(produtosTable)
+      .where(and(eq(produtosTable.id, item.produtoId), eq(produtosTable.userId, userId)))
+      .limit(1);
     if (produto.length === 0) {
       res.status(404).json({ error: `Produto ${item.produtoId} nao encontrado` });
       return;
@@ -144,11 +165,18 @@ router.post("/vendas", requireAuth, async (req, res) => {
   });
 });
 
-router.get("/vendas/:id", requireAuth, async (req, res) => {
+router.get("/vendas/:id", requireAuth, async (req, res): Promise<void> => {
   const { userId } = req as AuthRequest;
-  const id = parseInt(req.params.id, 10);
+  const params = GetVendaParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const { id } = params.data;
 
-  const vendas = await db.select().from(vendasTable).where(and(eq(vendasTable.id, id), eq(vendasTable.userId, userId))).limit(1);
+  const vendas = await db.select().from(vendasTable)
+    .where(and(eq(vendasTable.id, id), eq(vendasTable.userId, userId)))
+    .limit(1);
   if (vendas.length === 0) {
     res.status(404).json({ error: "Venda nao encontrada" });
     return;
@@ -156,7 +184,9 @@ router.get("/vendas/:id", requireAuth, async (req, res) => {
 
   const v = vendas[0];
   const itens = await db.select().from(vendaItensTable).where(eq(vendaItensTable.vendaId, id));
-  const parcelas = await db.select().from(parcelasTable).where(eq(parcelasTable.vendaId, id)).orderBy(sql`${parcelasTable.numero} ASC`);
+  const parcelas = await db.select().from(parcelasTable)
+    .where(eq(parcelasTable.vendaId, id))
+    .orderBy(sql`${parcelasTable.numero} ASC`);
 
   res.json({
     venda: {
@@ -198,19 +228,32 @@ router.get("/vendas/:id", requireAuth, async (req, res) => {
   });
 });
 
-router.patch("/vendas/:id", requireAuth, async (req, res) => {
+router.patch("/vendas/:id", requireAuth, async (req, res): Promise<void> => {
   const { userId } = req as AuthRequest;
-  const id = parseInt(req.params.id, 10);
+  const params = UpdateVendaParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const { id } = params.data;
 
-  const existing = await db.select().from(vendasTable).where(and(eq(vendasTable.id, id), eq(vendasTable.userId, userId))).limit(1);
+  const parsed = UpdateVendaBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const existing = await db.select().from(vendasTable)
+    .where(and(eq(vendasTable.id, id), eq(vendasTable.userId, userId)))
+    .limit(1);
   if (existing.length === 0) {
     res.status(404).json({ error: "Venda nao encontrada" });
     return;
   }
 
   const updates: Record<string, string | number | null> = {};
-  if (req.body.status) updates.status = req.body.status;
-  if (req.body.observacoes !== undefined) updates.observacoes = req.body.observacoes;
+  if (parsed.data.status) updates.status = parsed.data.status;
+  if (parsed.data.observacoes !== undefined) updates.observacoes = parsed.data.observacoes ?? null;
 
   const [updated] = await db.update(vendasTable).set(updates).where(eq(vendasTable.id, id)).returning();
 
@@ -229,18 +272,25 @@ router.patch("/vendas/:id", requireAuth, async (req, res) => {
   });
 });
 
-router.delete("/vendas/:id", requireAuth, async (req, res) => {
+router.delete("/vendas/:id", requireAuth, async (req, res): Promise<void> => {
   const { userId } = req as AuthRequest;
-  const id = parseInt(req.params.id, 10);
+  const params = DeleteVendaParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const { id } = params.data;
 
-  const existing = await db.select().from(vendasTable).where(and(eq(vendasTable.id, id), eq(vendasTable.userId, userId))).limit(1);
+  const existing = await db.select().from(vendasTable)
+    .where(and(eq(vendasTable.id, id), eq(vendasTable.userId, userId)))
+    .limit(1);
   if (existing.length === 0) {
     res.status(404).json({ error: "Venda nao encontrada" });
     return;
   }
 
   await db.delete(vendasTable).where(eq(vendasTable.id, id));
-  res.status(204).send();
+  res.sendStatus(204);
 });
 
 export default router;
