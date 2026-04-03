@@ -6,7 +6,7 @@ export const configuracoesTable = pgTable("configuracoes", {
   nomeNegocio: text("nome_negocio"),
   telefoneWhatsapp: text("telefone_whatsapp"),
   logoUrl: text("logo_url"),
-  catalogoSlug: text("catalogo_slug"),
+  catalogoSlug: text("catalogo_slug").unique(),
   catalogoAtivo: boolean("catalogo_ativo").notNull().default(false),
   cidade: text("cidade"),
   estado: text("estado"),

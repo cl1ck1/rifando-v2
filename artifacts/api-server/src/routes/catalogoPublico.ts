@@ -7,8 +7,7 @@ const router: IRouter = Router();
 
 router.get("/catalogo/:slug", async (req, res): Promise<void> => {
   try {
-    const raw = Array.isArray(req.params.slug) ? req.params.slug[0] : req.params.slug;
-    const slug = raw?.toLowerCase().trim();
+    const slug = (req.params.slug as string).toLowerCase().trim();
 
     if (!slug) {
       res.status(400).json({ error: "Slug invalido" });
@@ -19,8 +18,7 @@ router.get("/catalogo/:slug", async (req, res): Promise<void> => {
       .where(and(
         eq(configuracoesTable.catalogoSlug, slug),
         eq(configuracoesTable.catalogoAtivo, true)
-      ))
-      .limit(1);
+      ));
 
     if (configs.length === 0) {
       res.status(404).json({ error: "Loja nao encontrada" });

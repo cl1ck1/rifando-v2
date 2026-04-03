@@ -1,11 +1,20 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { configuracoesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
 import {
   UpdateConfiguracoesBody,
 } from "@workspace/api-zod";
+
+function normalizeSlug(slug: string): string {
+  return slug
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
 const router: IRouter = Router();
 
@@ -50,6 +59,27 @@ router.put("/configuracoes", requireAuth, async (req, res): Promise<void> => {
 
   if (existing.length === 0) {
     await db.insert(configuracoesTable).values({ userId });
+  }
+
+  if (parsed.data.catalogoSlug !== undefined && parsed.data.catalogoSlug !== null) {
+    const normalized = normalizeSlug(parsed.data.catalogoSlug);
+    if (!normalized) {
+      res.status(400).json({ error: "Slug do catalogo invalido" });
+      return;
+    }
+    parsed.data.catalogoSlug = normalized;
+
+    const conflict = await db.select({ id: configuracoesTable.id }).from(configuracoesTable)
+      .where(and(
+        eq(configuracoesTable.catalogoSlug, normalized),
+        ne(configuracoesTable.userId, userId)
+      ))
+      .limit(1);
+
+    if (conflict.length > 0) {
+      res.status(409).json({ error: "Este slug ja esta em uso por outra loja" });
+      return;
+    }
   }
 
   const updates: Record<string, string | boolean | null> = {};
