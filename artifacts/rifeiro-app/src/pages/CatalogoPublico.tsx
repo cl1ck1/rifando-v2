@@ -250,9 +250,11 @@ export default function CatalogoPublico() {
   const { loja, categorias, produtos } = data;
 
   const filteredProdutos = produtos.filter((p) => {
+    const q = search.toLowerCase();
     const matchesSearch = !search ||
-      p.nome.toLowerCase().includes(search.toLowerCase()) ||
-      (p.descricao && p.descricao.toLowerCase().includes(search.toLowerCase()));
+      p.nome.toLowerCase().includes(q) ||
+      (p.descricao && p.descricao.toLowerCase().includes(q)) ||
+      (p.categoriaNome && p.categoriaNome.toLowerCase().includes(q));
     const matchesCategoria = selectedCategoria === null || p.categoriaId === selectedCategoria;
     return matchesSearch && matchesCategoria;
   });
