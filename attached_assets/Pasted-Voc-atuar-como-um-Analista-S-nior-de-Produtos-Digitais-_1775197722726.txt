@@ -1,0 +1,87 @@
+Você atuará como um Analista Sênior de Produtos Digitais e Engenharia de Sistemas com foco em IA aplicada a negócios (Travel Tech e SaaS).
+
+Sua missão é realizar uma análise profunda, estruturada e completa do aplicativo apresentado no link abaixo, com foco em engenharia reversa de produto:
+
+LINK PARA ANÁLISE:
+https://www.sourifeiro.com.br/
+
+⸻
+
+ETAPA 1 — MAPEAMENTO COMPLETO DO PRODUTO
+
+Analise cuidadosamente toda a página e identifique:
+	•	Proposta de valor central
+	•	Público-alvo
+	•	Problema que resolve
+	•	Promessas de marketing (explícitas e implícitas)
+
+⸻
+
+ETAPA 2 — FUNCIONALIDADES E SISTEMA
+
+Liste TODAS as funcionalidades possíveis, incluindo:
+	•	Funcionalidades explícitas (descritas no site)
+	•	Funcionalidades implícitas (inferidas com base no mercado e no tipo de produto)
+	•	Fluxo completo do usuário (do primeiro acesso até a entrega do serviço)
+	•	Estrutura do sistema (front-end, back-end, automações, IA, etc.)
+
+⸻
+
+ETAPA 3 — TECNOLOGIAS E INFRAESTRUTURA
+
+Identifique e proponha:
+	•	Possíveis tecnologias utilizadas (stack técnica)
+	•	Ferramentas e APIs que podem estar integradas
+	•	Uso de IA (onde e como ela atua)
+	•	Automações e integrações (pagamentos, CRM, geração de conteúdo, etc.)
+
+⸻
+
+ETAPA 4 — ENGENHARIA REVERSA DO PRODUTO
+
+Explique como recriar esse sistema:
+	•	Arquitetura do produto (modularizada)
+	•	Componentes essenciais
+	•	Etapas de desenvolvimento
+	•	Ferramentas alternativas para construir algo semelhante
+
+⸻
+
+ETAPA 5 — ANÁLISE ESTRATÉGICA
+
+Apresente:
+	•	Pontos fortes do produto
+	•	Diferenciais competitivos
+	•	Pontos fracos ou limitações
+	•	Oportunidades claras de melhoria
+
+⸻
+
+ETAPA 6 — SUGESTÕES DE MELHORIA E EXPANSÃO
+
+Sugira:
+	•	Novas funcionalidades que aumentariam o valor do produto
+	•	Possíveis diferenciais estratégicos
+	•	Ideias de monetização adicionais
+
+⸻
+
+FORMATO DA RESPOSTA (OBRIGATÓRIO)
+
+Sua resposta deve seguir esta estrutura:
+	1.	Resumo Executivo
+	2.	Análise do Produto
+	3.	Lista Completa de Funcionalidades
+	4.	Tecnologia e Infraestrutura
+	5.	Como Recriar o Produto (Passo a Passo)
+	6.	Análise Estratégica (Forças, Fraquezas, Oportunidades)
+	7.	Sugestões de Melhoria
+
+⸻
+
+REGRAS IMPORTANTES (INEGOCIÁVEIS)
+	•	Seja extremamente detalhado e técnico
+	•	Evite respostas genéricas
+	•	Use inferência estratégica quando necessário, mas sinalize claramente quando for hipótese
+	•	Pense como um engenheiro de produto + estrategista de negócio
+	•	Tome seu tempo e verifique sua análise antes de responder
