@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Sou Rifeiro"
+version = "1.0.0"
+id = "artifacts/rifeiro-app"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22731
+
+[services.development]
+run = "pnpm --filter @workspace/rifeiro-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/rifeiro-app", "run", "build" ]
+publicDir = "artifacts/rifeiro-app/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22731"
+BASE_PATH = "/"

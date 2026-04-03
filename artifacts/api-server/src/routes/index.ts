@@ -1,8 +1,22 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import dashboardRouter from "./dashboard";
+import viagensRouter from "./viagens";
+import clientesRouter from "./clientes";
+import pagamentosRouter from "./pagamentos";
+import produtosRouter from "./produtos";
+import categoriasRouter from "./categorias";
+import configuracoesRouter from "./configuracoes";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(dashboardRouter);
+router.use(viagensRouter);
+router.use(clientesRouter);
+router.use(pagamentosRouter);
+router.use(produtosRouter);
+router.use(categoriasRouter);
+router.use(configuracoesRouter);
 
 export default router;
