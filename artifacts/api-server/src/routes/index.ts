@@ -1,9 +1,9 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
 import dashboardRouter from "./dashboard";
-import viagensRouter from "./viagens";
+import vendasRouter from "./vendas";
 import clientesRouter from "./clientes";
-import pagamentosRouter from "./pagamentos";
+import parcelasRouter from "./parcelas";
 import produtosRouter from "./produtos";
 import categoriasRouter from "./categorias";
 import configuracoesRouter from "./configuracoes";
@@ -12,9 +12,9 @@ const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(dashboardRouter);
-router.use(viagensRouter);
+router.use(vendasRouter);
 router.use(clientesRouter);
-router.use(pagamentosRouter);
+router.use(parcelasRouter);
 router.use(produtosRouter);
 router.use(categoriasRouter);
 router.use(configuracoesRouter);

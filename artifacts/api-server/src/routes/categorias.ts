@@ -1,48 +1,54 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { categoriasTable } from "@workspace/db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
-import { CreateCategoriaBody } from "@workspace/api-zod";
 
 const router = Router();
 
 router.get("/categorias", requireAuth, async (req, res) => {
   const { userId } = req as AuthRequest;
-  try {
-    const rows = await db.select().from(categoriasTable)
-      .where(eq(categoriasTable.userId, userId))
-      .orderBy(desc(categoriasTable.createdAt));
-    res.json(rows);
-  } catch (e) {
-    res.status(500).json({ error: "Internal server error" });
-  }
+  const categorias = await db.select().from(categoriasTable)
+    .where(eq(categoriasTable.userId, userId))
+    .orderBy(sql`${categoriasTable.nome} ASC`);
+
+  res.json(categorias.map((c) => ({
+    id: c.id,
+    nome: c.nome,
+    createdAt: c.createdAt?.toISOString(),
+  })));
 });
 
 router.post("/categorias", requireAuth, async (req, res) => {
   const { userId } = req as AuthRequest;
-  try {
-    const parsed = CreateCategoriaBody.safeParse(req.body);
-    if (!parsed.success) { res.status(400).json({ error: parsed.error.issues }); return; }
-    const [row] = await db.insert(categoriasTable).values({ ...parsed.data, userId }).returning();
-    res.status(201).json(row);
-  } catch (e) {
-    res.status(500).json({ error: "Internal server error" });
-  }
+
+  const [created] = await db.insert(categoriasTable).values({
+    userId,
+    nome: req.body.nome,
+  }).returning();
+
+  res.status(201).json({
+    id: created.id,
+    nome: created.nome,
+    createdAt: created.createdAt?.toISOString(),
+  });
 });
 
 router.delete("/categorias/:id", requireAuth, async (req, res) => {
   const { userId } = req as AuthRequest;
-  const id = parseInt(req.params.id);
-  try {
-    const [row] = await db.delete(categoriasTable)
-      .where(and(eq(categoriasTable.id, id), eq(categoriasTable.userId, userId)))
-      .returning();
-    if (!row) { res.status(404).json({ error: "Not found" }); return; }
-    res.status(204).send();
-  } catch (e) {
-    res.status(500).json({ error: "Internal server error" });
+  const id = parseInt(req.params.id, 10);
+
+  const existing = await db.select().from(categoriasTable)
+    .where(and(eq(categoriasTable.id, id), eq(categoriasTable.userId, userId)))
+    .limit(1);
+
+  if (existing.length === 0) {
+    res.status(404).json({ error: "Categoria nao encontrada" });
+    return;
   }
+
+  await db.delete(categoriasTable).where(eq(categoriasTable.id, id));
+  res.status(204).send();
 });
 
 export default router;

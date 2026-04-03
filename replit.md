@@ -2,7 +2,7 @@
 
 ## Overview
 
-Brazilian SaaS platform for independent travel vendors ("rifeiros") who sell group bus excursions in installments. Multi-tenant with Clerk auth. All UI in Brazilian Portuguese, no emojis.
+Brazilian SaaS platform for ambulant door-to-door salespeople and commercial representatives ("rifeiros") who buy products from distributors (linens, kitchenware, electronics) and sell them in other cities with installment payment plans. Main customers are women and resellers. Multi-tenant with Clerk auth. All UI in Brazilian Portuguese, no emojis.
 
 ## Stack
 
@@ -12,7 +12,6 @@ Brazilian SaaS platform for independent travel vendors ("rifeiros") who sell gro
 - **TypeScript version**: 5.9
 - **API framework**: Express 5
 - **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
 - **Frontend**: React + Vite + Tailwind CSS + shadcn/ui
@@ -33,25 +32,26 @@ Brazilian SaaS platform for independent travel vendors ("rifeiros") who sell gro
 - `lib/db` — Drizzle ORM schema + database connection
 
 ### Database Tables
-- `viagens` — Trip management (destino, seats, pricing, status)
-- `clientes` — Customer CRM (nome, telefone, CPF, etc.)
-- `pagamentos` — Payment tracking (parcelas, metodo, status)
-- `produtos` — Product catalog
+- `vendas` — Sales transactions (clienteId, valorTotal, desconto, valorFinal, formaPagamento, numeroParcelas, status)
+- `venda_itens` — Sale line items (vendaId, produtoId, quantidade, precoUnitario, subtotal)
+- `parcelas` — Installment tracking (vendaId, clienteId, numero, valor, dataVencimento, status, metodoPagamento)
+- `clientes` — Customer CRM (nome, telefone, cpf, endereco, bairro, cidade, estado, referencia)
+- `produtos` — Product catalog (precoCusto, precoVenda, estoque, categoriaId)
 - `categorias` — Product categories
-- `configuracoes` — Per-user account settings
+- `configuracoes` — Per-user account settings (nomeNegocio, telefoneWhatsapp, catalogoSlug, chavePix)
 - `atividades` — Activity feed log
 
 ### Frontend Pages
 - `/` — Landing page (signed-out) / redirect to /painel (signed-in)
 - `/sign-in`, `/sign-up` — Clerk auth
-- `/painel` — Dashboard with KPIs, revenue chart, top customers, activity feed
-- `/viagens` — Trip list with CRUD, status filters
-- `/viagens/:id` — Trip detail with occupancy stats
-- `/clientes` — Customer list with search, status filters
-- `/clientes/:id` — Customer detail with payment/trip history
-- `/financeiro` — Payment management with filters
-- `/catalogo` — Product catalog with categories
-- `/configuracoes` — Account settings
+- `/painel` — Dashboard with KPIs (totalVendas, totalRecebido, totalPendente, parcelasAtrasadas), revenue chart, top customers, overdue parcels, activity feed
+- `/vendas` — Sales list with status filters, create sale with cart (add products, set installments)
+- `/vendas/:id` — Sale detail with items, parcels, mark-as-paid functionality
+- `/clientes` — Customer list with search, create with full address fields
+- `/clientes/:id` — Customer detail with purchase history, parcels, financial summary
+- `/parcelas` — Installment management with status filters, receive payment by method (pix/dinheiro/cartao/promissoria)
+- `/catalogo` — Product catalog with categories, cost/sale price, stock, margin calculation
+- `/configuracoes` — Account settings (business name, whatsapp, pix key, catalog)
 
 ## Key Commands
 
@@ -64,6 +64,15 @@ Brazilian SaaS platform for independent travel vendors ("rifeiros") who sell gro
 ## Auth
 
 Clerk is used for authentication. Keys are auto-provisioned. The proxy middleware at `/__clerk` handles Clerk API proxying. `requireAuth` middleware in routes extracts `userId` from Clerk session. All data is tenant-scoped by `userId`.
+
+## Domain Model
+
+Rifeiros are ambulant salespeople who:
+1. Buy products wholesale from distributors (enxovais, utensilios, eletronicos)
+2. Travel to other cities to sell door-to-door
+3. Sell with extended installment payment plans (carne/promissoria)
+4. Main customers: women and resellers who buy for personal use or resale
+5. Deliver products to customer's home address
 
 ## Pending Tasks
 - Task #3: Public virtual catalog page per rifeiro

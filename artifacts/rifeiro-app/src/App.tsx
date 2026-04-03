@@ -8,14 +8,13 @@ import { queryClient } from "@/lib/queryClient";
 import NotFound from "@/pages/not-found";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
-// Pages
 import Home from "@/pages/Home";
 import Painel from "@/pages/Painel";
-import Viagens from "@/pages/Viagens";
-import ViagemDetail from "@/pages/ViagemDetail";
+import Vendas from "@/pages/Vendas";
+import VendaDetail from "@/pages/VendaDetail";
 import Clientes from "@/pages/Clientes";
 import ClienteDetail from "@/pages/ClienteDetail";
-import Financeiro from "@/pages/Financeiro";
+import Parcelas from "@/pages/Parcelas";
 import Catalogo from "@/pages/Catalogo";
 import Configuracoes from "@/pages/Configuracoes";
 
@@ -118,11 +117,11 @@ function AppRouter() {
             <Route path="/sign-up/*?" component={SignUpPage} />
             
             <Route path="/painel" component={() => <ProtectedRoute component={Painel} />} />
-            <Route path="/viagens" component={() => <ProtectedRoute component={Viagens} />} />
-            <Route path="/viagens/:id" component={() => <ProtectedRoute component={ViagemDetail} />} />
+            <Route path="/vendas" component={() => <ProtectedRoute component={Vendas} />} />
+            <Route path="/vendas/:id" component={() => <ProtectedRoute component={VendaDetail} />} />
             <Route path="/clientes" component={() => <ProtectedRoute component={Clientes} />} />
             <Route path="/clientes/:id" component={() => <ProtectedRoute component={ClienteDetail} />} />
-            <Route path="/financeiro" component={() => <ProtectedRoute component={Financeiro} />} />
+            <Route path="/parcelas" component={() => <ProtectedRoute component={Parcelas} />} />
             <Route path="/catalogo" component={() => <ProtectedRoute component={Catalogo} />} />
             <Route path="/configuracoes" component={() => <ProtectedRoute component={Configuracoes} />} />
 

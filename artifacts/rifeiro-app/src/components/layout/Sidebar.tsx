@@ -3,13 +3,12 @@ import { Link, useLocation } from "wouter";
 import { useClerk, useUser } from "@clerk/react";
 import {
   LayoutDashboard,
-  MapPin,
+  ShoppingBag,
   Users,
-  CreditCard,
+  CalendarCheck,
   Package,
   Settings,
   LogOut,
-  Menu,
   X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,10 +16,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const navItems = [
   { name: "Painel", href: "/painel", icon: LayoutDashboard },
-  { name: "Viagens", href: "/viagens", icon: MapPin },
+  { name: "Vendas", href: "/vendas", icon: ShoppingBag },
   { name: "Clientes", href: "/clientes", icon: Users },
-  { name: "Financeiro", href: "/financeiro", icon: CreditCard },
-  { name: "Catálogo", href: "/catalogo", icon: Package },
+  { name: "Parcelas", href: "/parcelas", icon: CalendarCheck },
+  { name: "Produtos", href: "/catalogo", icon: Package },
 ];
 
 export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
@@ -34,7 +33,6 @@ export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: bool
 
   return (
     <>
-      {/* Mobile Backdrop */}
       {open && (
         <div 
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
@@ -42,7 +40,6 @@ export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: bool
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border transform transition-transform duration-200 ease-in-out lg:translate-x-0 flex flex-col ${
           open ? "translate-x-0" : "-translate-x-full"
@@ -50,7 +47,7 @@ export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: bool
       >
         <div className="h-16 flex items-center justify-between px-6 border-b border-sidebar-border">
           <Link href="/painel" className="flex items-center gap-2 font-bold text-xl text-primary">
-            <MapPin className="w-6 h-6" />
+            <ShoppingBag className="w-6 h-6" />
             <span>Sou Rifeiro</span>
           </Link>
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(false)}>
@@ -60,7 +57,7 @@ export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: bool
 
         <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
           {navItems.map((item) => {
-            const isActive = location.startsWith(item.href);
+            const isActive = location === item.href || (item.href !== "/painel" && location.startsWith(item.href));
             return (
               <Link
                 key={item.href}
@@ -90,7 +87,7 @@ export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: bool
             onClick={() => setOpen(false)}
           >
             <Settings className="w-5 h-5" />
-            Configurações
+            Configuracoes
           </Link>
 
           <div className="mt-4 pt-4 border-t border-sidebar-border flex items-center gap-3">
@@ -100,7 +97,7 @@ export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: bool
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">
-                {user?.fullName || "Usuário"}
+                {user?.fullName || "Usuario"}
               </p>
               <p className="text-xs text-muted-foreground truncate">
                 {user?.primaryEmailAddress?.emailAddress}

@@ -1,91 +1,118 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { viagensTable, clientesTable, pagamentosTable, atividadesTable } from "@workspace/db";
-import { eq, sql, and, desc } from "drizzle-orm";
+import { vendasTable, clientesTable, parcelasTable, atividadesTable } from "@workspace/db";
+import { eq, sql, desc } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
 
 const router = Router();
 
 router.get("/dashboard/summary", requireAuth, async (req, res) => {
   const { userId } = req as AuthRequest;
-  try {
-    const [viagens] = await db.select({
-      totalTrips: sql<number>`count(*)::int`,
-      activeTrips: sql<number>`count(*) filter (where ${viagensTable.status} = 'ativa')::int`,
-      seatsSold: sql<number>`coalesce(sum(${viagensTable.assentosVendidos}), 0)::int`,
-    }).from(viagensTable).where(eq(viagensTable.userId, userId));
 
-    const [clientes] = await db.select({
-      totalCustomers: sql<number>`count(*)::int`,
-    }).from(clientesTable).where(eq(clientesTable.userId, userId));
+  const [vendaStats] = await db.select({
+    totalVendas: sql<number>`coalesce(sum(${vendasTable.valorFinal}::numeric), 0)::float`,
+    vendasMes: sql<number>`count(*) filter (where to_char(${vendasTable.createdAt}, 'YYYY-MM') = to_char(now(), 'YYYY-MM'))::int`,
+  }).from(vendasTable).where(eq(vendasTable.userId, userId));
 
-    const [pagamentos] = await db.select({
-      totalRevenue: sql<number>`coalesce(sum(case when ${pagamentosTable.status} = 'pago' then ${pagamentosTable.valor}::numeric else 0 end), 0)::float`,
-      pendingPayments: sql<number>`coalesce(sum(case when ${pagamentosTable.status} in ('pendente', 'atrasado') then ${pagamentosTable.valor}::numeric else 0 end), 0)::float`,
-    }).from(pagamentosTable).where(eq(pagamentosTable.userId, userId));
+  const [clienteStats] = await db.select({
+    totalClientes: sql<number>`count(*)::int`,
+  }).from(clientesTable).where(eq(clientesTable.userId, userId));
 
-    res.json({
-      totalRevenue: pagamentos.totalRevenue,
-      totalTrips: viagens.totalTrips,
-      totalCustomers: clientes.totalCustomers,
-      seatsSold: viagens.seatsSold,
-      pendingPayments: pagamentos.pendingPayments,
-      activeTrips: viagens.activeTrips,
-    });
-  } catch (e) {
-    res.status(500).json({ error: "Internal server error" });
-  }
+  const [parcelaStats] = await db.select({
+    totalRecebido: sql<number>`coalesce(sum(case when ${parcelasTable.status} = 'paga' then ${parcelasTable.valor}::numeric else 0 end), 0)::float`,
+    totalPendente: sql<number>`coalesce(sum(case when ${parcelasTable.status} in ('pendente', 'atrasada') then ${parcelasTable.valor}::numeric else 0 end), 0)::float`,
+    parcelasAtrasadas: sql<number>`count(*) filter (where ${parcelasTable.status} = 'atrasada' or (${parcelasTable.status} = 'pendente' and ${parcelasTable.dataVencimento} < to_char(now(), 'YYYY-MM-DD')))::int`,
+  }).from(parcelasTable).where(eq(parcelasTable.userId, userId));
+
+  res.json({
+    totalVendas: vendaStats.totalVendas,
+    totalRecebido: parcelaStats.totalRecebido,
+    totalPendente: parcelaStats.totalPendente,
+    totalClientes: clienteStats.totalClientes,
+    vendasMes: vendaStats.vendasMes,
+    parcelasAtrasadas: parcelaStats.parcelasAtrasadas,
+  });
 });
 
 router.get("/dashboard/revenue-by-month", requireAuth, async (req, res) => {
   const { userId } = req as AuthRequest;
-  try {
-    const rows = await db.select({
-      month: sql<string>`to_char(${pagamentosTable.createdAt}, 'YYYY-MM')`,
-      revenue: sql<number>`coalesce(sum(case when ${pagamentosTable.status} = 'pago' then ${pagamentosTable.valor}::numeric else 0 end), 0)::float`,
-      expenses: sql<number>`0::float`,
-    }).from(pagamentosTable)
-      .where(eq(pagamentosTable.userId, userId))
-      .groupBy(sql`to_char(${pagamentosTable.createdAt}, 'YYYY-MM')`)
-      .orderBy(sql`to_char(${pagamentosTable.createdAt}, 'YYYY-MM')`);
-    res.json(rows);
-  } catch (e) {
-    res.status(500).json({ error: "Internal server error" });
-  }
+
+  const rows = await db.select({
+    month: sql<string>`to_char(${parcelasTable.createdAt}, 'YYYY-MM')`,
+    vendas: sql<number>`coalesce(sum(${parcelasTable.valor}::numeric), 0)::float`,
+    recebido: sql<number>`coalesce(sum(case when ${parcelasTable.status} = 'paga' then ${parcelasTable.valor}::numeric else 0 end), 0)::float`,
+  }).from(parcelasTable)
+    .where(eq(parcelasTable.userId, userId))
+    .groupBy(sql`to_char(${parcelasTable.createdAt}, 'YYYY-MM')`)
+    .orderBy(sql`to_char(${parcelasTable.createdAt}, 'YYYY-MM')`);
+
+  res.json(rows);
 });
 
 router.get("/dashboard/top-customers", requireAuth, async (req, res) => {
   const { userId } = req as AuthRequest;
   const limit = parseInt(req.query.limit as string) || 5;
-  try {
-    const rows = await db.select({
-      id: clientesTable.id,
-      name: clientesTable.nome,
-      totalSpent: sql<number>`${clientesTable.totalGasto}::float`,
-      tripsCount: clientesTable.viagensCount,
-      phone: clientesTable.telefone,
-    }).from(clientesTable)
-      .where(eq(clientesTable.userId, userId))
-      .orderBy(sql`${clientesTable.totalGasto}::numeric desc`)
-      .limit(limit);
-    res.json(rows);
-  } catch (e) {
-    res.status(500).json({ error: "Internal server error" });
-  }
+
+  const rows = await db.select({
+    id: clientesTable.id,
+    nome: clientesTable.nome,
+    totalCompras: sql<number>`${clientesTable.totalCompras}::float`,
+    comprasCount: sql<number>`(select count(*) from vendas where vendas.cliente_id = ${clientesTable.id})::int`,
+    telefone: clientesTable.telefone,
+    cidade: clientesTable.cidade,
+  }).from(clientesTable)
+    .where(eq(clientesTable.userId, userId))
+    .orderBy(sql`${clientesTable.totalCompras}::numeric desc`)
+    .limit(limit);
+
+  res.json(rows);
 });
 
 router.get("/dashboard/recent-activity", requireAuth, async (req, res) => {
   const { userId } = req as AuthRequest;
   const limit = parseInt(req.query.limit as string) || 10;
-  try {
-    const rows = await db.select().from(atividadesTable)
-      .where(eq(atividadesTable.userId, userId))
-      .orderBy(desc(atividadesTable.createdAt))
-      .limit(limit);
-    res.json(rows);
-  } catch (e) {
-    res.status(500).json({ error: "Internal server error" });
-  }
+
+  const rows = await db.select().from(atividadesTable)
+    .where(eq(atividadesTable.userId, userId))
+    .orderBy(desc(atividadesTable.createdAt))
+    .limit(limit);
+
+  res.json(rows.map((r) => ({
+    id: r.id,
+    type: r.type,
+    description: r.description,
+    createdAt: r.createdAt.toISOString(),
+  })));
+});
+
+router.get("/dashboard/parcelas-atrasadas", requireAuth, async (req, res) => {
+  const { userId } = req as AuthRequest;
+
+  const rows = await db.select().from(parcelasTable)
+    .where(eq(parcelasTable.userId, userId))
+    .orderBy(sql`${parcelasTable.dataVencimento} ASC`);
+
+  const today = new Date().toISOString().split("T")[0];
+  const atrasadas = rows
+    .filter((p) => (p.status === "pendente" || p.status === "atrasada") && p.dataVencimento < today)
+    .map((p) => {
+      const dueDate = new Date(p.dataVencimento);
+      const todayDate = new Date(today);
+      const diasAtraso = Math.floor((todayDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      return {
+        id: p.id,
+        vendaId: p.vendaId,
+        clienteNome: p.clienteNome,
+        clienteTelefone: p.clienteTelefone,
+        valor: Number(p.valor),
+        dataVencimento: p.dataVencimento,
+        diasAtraso,
+        parcela: p.numero,
+        totalParcelas: p.totalParcelas,
+      };
+    });
+
+  res.json(atrasadas);
 });
 
 export default router;

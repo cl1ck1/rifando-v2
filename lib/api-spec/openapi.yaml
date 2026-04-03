@@ -2,8 +2,8 @@ openapi: 3.1.0
 info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
-  description: Sou Rifeiro API specification
+  version: 0.2.0
+  description: Sou Rifeiro API - Plataforma para vendedores ambulantes e representantes comerciais
 servers:
   - url: /api
     description: Base API path
@@ -12,12 +12,12 @@ tags:
     description: Health operations
   - name: dashboard
     description: Dashboard and analytics
-  - name: viagens
-    description: Trip management
+  - name: vendas
+    description: Sales management
   - name: clientes
     description: Customer CRM
-  - name: pagamentos
-    description: Payment management
+  - name: parcelas
+    description: Installment payment tracking
   - name: produtos
     description: Product catalog management
   - name: categorias
@@ -31,7 +31,6 @@ paths:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -73,7 +72,7 @@ paths:
     get:
       operationId: getTopCustomers
       tags: [dashboard]
-      summary: Top customers by total spend
+      summary: Top customers by total purchases
       parameters:
         - name: limit
           in: query
@@ -111,50 +110,69 @@ paths:
                 items:
                   $ref: "#/components/schemas/ActivityItem"
 
-  # ── Viagens (Trips) ────────────────────────────────
-  /viagens:
+  /dashboard/parcelas-atrasadas:
     get:
-      operationId: listViagens
-      tags: [viagens]
-      summary: List all trips
-      parameters:
-        - name: status
-          in: query
-          schema:
-            type: string
-            enum: [planejada, ativa, concluida, cancelada]
+      operationId: getParcelasAtrasadas
+      tags: [dashboard]
+      summary: Overdue installments summary
       responses:
         "200":
-          description: List of trips
+          description: Overdue installments
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Viagem"
+                  $ref: "#/components/schemas/ParcelaAtrasadaItem"
+
+  # ── Vendas (Sales) ────────────────────────────────
+  /vendas:
+    get:
+      operationId: listVendas
+      tags: [vendas]
+      summary: List all sales
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pendente, parcial, quitada, cancelada]
+        - name: clienteId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of sales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Venda"
     post:
-      operationId: createViagem
-      tags: [viagens]
-      summary: Create a new trip
+      operationId: createVenda
+      tags: [vendas]
+      summary: Create a new sale with items and installments
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateViagemBody"
+              $ref: "#/components/schemas/CreateVendaBody"
       responses:
         "201":
-          description: Created trip
+          description: Created sale
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Viagem"
+                $ref: "#/components/schemas/Venda"
 
-  /viagens/{id}:
+  /vendas/{id}:
     get:
-      operationId: getViagem
-      tags: [viagens]
-      summary: Get a single trip
+      operationId: getVenda
+      tags: [vendas]
+      summary: Get a single sale with items and installments
       parameters:
         - name: id
           in: path
@@ -163,17 +181,17 @@ paths:
             type: integer
       responses:
         "200":
-          description: Trip details
+          description: Sale details with items and parcelas
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Viagem"
+                $ref: "#/components/schemas/VendaDetail"
         "404":
           description: Not found
     patch:
-      operationId: updateViagem
-      tags: [viagens]
-      summary: Update a trip
+      operationId: updateVenda
+      tags: [vendas]
+      summary: Update a sale
       parameters:
         - name: id
           in: path
@@ -185,20 +203,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateViagemBody"
+              $ref: "#/components/schemas/UpdateVendaBody"
       responses:
         "200":
-          description: Updated trip
+          description: Updated sale
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Viagem"
+                $ref: "#/components/schemas/Venda"
         "404":
           description: Not found
     delete:
-      operationId: deleteViagem
-      tags: [viagens]
-      summary: Delete a trip
+      operationId: deleteVenda
+      tags: [vendas]
+      summary: Delete a sale
       parameters:
         - name: id
           in: path
@@ -208,25 +226,6 @@ paths:
       responses:
         "204":
           description: Deleted
-
-  /viagens/{id}/occupancy:
-    get:
-      operationId: getViagemOccupancy
-      tags: [viagens]
-      summary: Get trip occupancy stats
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Occupancy stats
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ViagemOccupancy"
 
   # ── Clientes (Customers) ───────────────────────────
   /clientes:
@@ -244,6 +243,10 @@ paths:
           schema:
             type: string
             enum: [ativo, inativo]
+        - name: cidade
+          in: query
+          schema:
+            type: string
       responses:
         "200":
           description: List of customers
@@ -334,7 +337,7 @@ paths:
     get:
       operationId: getClienteHistory
       tags: [clientes]
-      summary: Customer trip and payment history
+      summary: Customer purchase and payment history
       parameters:
         - name: id
           in: path
@@ -349,63 +352,41 @@ paths:
               schema:
                 $ref: "#/components/schemas/ClienteHistory"
 
-  # ── Pagamentos (Payments) ──────────────────────────
-  /pagamentos:
+  # ── Parcelas (Installments) ──────────────────────────
+  /parcelas:
     get:
-      operationId: listPagamentos
-      tags: [pagamentos]
-      summary: List all payments
+      operationId: listParcelas
+      tags: [parcelas]
+      summary: List all installments
       parameters:
         - name: status
           in: query
           schema:
             type: string
-            enum: [pendente, pago, atrasado, cancelado]
-        - name: metodo
-          in: query
-          schema:
-            type: string
-            enum: [pix, cartao, promissoria]
+            enum: [pendente, paga, atrasada, cancelada]
         - name: clienteId
           in: query
           schema:
             type: integer
-        - name: viagemId
+        - name: vendaId
           in: query
           schema:
             type: integer
       responses:
         "200":
-          description: List of payments
+          description: List of installments
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Pagamento"
-    post:
-      operationId: createPagamento
-      tags: [pagamentos]
-      summary: Register a new payment
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreatePagamentoBody"
-      responses:
-        "201":
-          description: Created payment
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Pagamento"
+                  $ref: "#/components/schemas/Parcela"
 
-  /pagamentos/{id}:
+  /parcelas/{id}:
     get:
-      operationId: getPagamento
-      tags: [pagamentos]
-      summary: Get a single payment
+      operationId: getParcela
+      tags: [parcelas]
+      summary: Get a single installment
       parameters:
         - name: id
           in: path
@@ -414,17 +395,17 @@ paths:
             type: integer
       responses:
         "200":
-          description: Payment details
+          description: Installment details
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Pagamento"
+                $ref: "#/components/schemas/Parcela"
         "404":
           description: Not found
     patch:
-      operationId: updatePagamento
-      tags: [pagamentos]
-      summary: Update payment status
+      operationId: updateParcela
+      tags: [parcelas]
+      summary: Update installment (mark as paid, change date, etc.)
       parameters:
         - name: id
           in: path
@@ -436,29 +417,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdatePagamentoBody"
+              $ref: "#/components/schemas/UpdateParcelaBody"
       responses:
         "200":
-          description: Updated payment
+          description: Updated installment
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Pagamento"
+                $ref: "#/components/schemas/Parcela"
         "404":
           description: Not found
-    delete:
-      operationId: deletePagamento
-      tags: [pagamentos]
-      summary: Delete a payment
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "204":
-          description: Deleted
 
   # ── Produtos (Products) ────────────────────────────
   /produtos:
@@ -653,45 +621,47 @@ components:
     # ── Dashboard Schemas ──────────────────────────────
     DashboardSummary:
       type: object
-      required: [totalRevenue, totalTrips, totalCustomers, seatsSold, pendingPayments, activeTrips]
+      required: [totalVendas, totalRecebido, totalPendente, totalClientes, vendasMes, parcelasAtrasadas]
       properties:
-        totalRevenue:
+        totalVendas:
           type: number
-        totalTrips:
-          type: integer
-        totalCustomers:
-          type: integer
-        seatsSold:
-          type: integer
-        pendingPayments:
+        totalRecebido:
           type: number
-        activeTrips:
+        totalPendente:
+          type: number
+        totalClientes:
+          type: integer
+        vendasMes:
+          type: integer
+        parcelasAtrasadas:
           type: integer
 
     MonthlyRevenue:
       type: object
-      required: [month, revenue, expenses]
+      required: [month, vendas, recebido]
       properties:
         month:
           type: string
-        revenue:
+        vendas:
           type: number
-        expenses:
+        recebido:
           type: number
 
     TopCustomer:
       type: object
-      required: [id, name, totalSpent, tripsCount]
+      required: [id, nome, totalCompras, comprasCount]
       properties:
         id:
           type: integer
-        name:
+        nome:
           type: string
-        totalSpent:
+        totalCompras:
           type: number
-        tripsCount:
+        comprasCount:
           type: integer
-        phone:
+        telefone:
+          type: ["string", "null"]
+        cidade:
           type: ["string", "null"]
 
     ActivityItem:
@@ -702,118 +672,135 @@ components:
           type: integer
         type:
           type: string
-          enum: [venda, pagamento, cliente, viagem, produto]
+          enum: [venda, pagamento, cliente, produto]
         description:
           type: string
         createdAt:
           type: string
           format: date-time
 
-    # ── Viagem Schemas ─────────────────────────────────
-    Viagem:
+    ParcelaAtrasadaItem:
       type: object
-      required: [id, destino, dataPartida, dataRetorno, assentosTotal, assentosVendidos, precoPorAssento, status, createdAt]
+      required: [id, clienteNome, clienteTelefone, valor, dataVencimento, diasAtraso]
       properties:
         id:
           type: integer
-        destino:
+        vendaId:
+          type: integer
+        clienteNome:
           type: string
-        descricao:
+        clienteTelefone:
           type: ["string", "null"]
-        dataPartida:
-          type: string
-          format: date-time
-        dataRetorno:
-          type: string
-          format: date-time
-        assentosTotal:
-          type: integer
-        assentosVendidos:
-          type: integer
-        precoPorAssento:
+        valor:
           type: number
-        paradasRota:
-          type: ["string", "null"]
+        dataVencimento:
+          type: string
+        diasAtraso:
+          type: integer
+        parcela:
+          type: integer
+        totalParcelas:
+          type: integer
+
+    # ── Venda Schemas ─────────────────────────────────
+    Venda:
+      type: object
+      required: [id, clienteId, clienteNome, valorTotal, valorFinal, formaPagamento, numeroParcelas, status, createdAt]
+      properties:
+        id:
+          type: integer
+        clienteId:
+          type: integer
+        clienteNome:
+          type: string
+        valorTotal:
+          type: number
+        desconto:
+          type: number
+        valorFinal:
+          type: number
+        formaPagamento:
+          type: string
+          enum: [avista, parcelado]
+        numeroParcelas:
+          type: integer
         status:
           type: string
-          enum: [planejada, ativa, concluida, cancelada]
-        imagemUrl:
+          enum: [pendente, parcial, quitada, cancelada]
+        observacoes:
           type: ["string", "null"]
         createdAt:
           type: string
           format: date-time
 
-    CreateViagemBody:
+    VendaItem:
       type: object
-      required: [destino, dataPartida, dataRetorno, assentosTotal, precoPorAssento]
+      required: [id, produtoId, produtoNome, quantidade, precoUnitario, subtotal]
       properties:
-        destino:
-          type: string
-        descricao:
-          type: string
-        dataPartida:
-          type: string
-          format: date-time
-        dataRetorno:
-          type: string
-          format: date-time
-        assentosTotal:
+        id:
           type: integer
-        precoPorAssento:
-          type: number
-        paradasRota:
+        produtoId:
+          type: integer
+        produtoNome:
           type: string
+        quantidade:
+          type: integer
+        precoUnitario:
+          type: number
+        subtotal:
+          type: number
+
+    VendaDetail:
+      type: object
+      required: [venda, itens, parcelas]
+      properties:
+        venda:
+          $ref: "#/components/schemas/Venda"
+        itens:
+          type: array
+          items:
+            $ref: "#/components/schemas/VendaItem"
+        parcelas:
+          type: array
+          items:
+            $ref: "#/components/schemas/Parcela"
+
+    CreateVendaBody:
+      type: object
+      required: [clienteId, itens, formaPagamento, numeroParcelas]
+      properties:
+        clienteId:
+          type: integer
+        desconto:
+          type: number
+        formaPagamento:
+          type: string
+          enum: [avista, parcelado]
+        numeroParcelas:
+          type: integer
+        observacoes:
+          type: string
+        itens:
+          type: array
+          items:
+            type: object
+            required: [produtoId, quantidade, precoUnitario]
+            properties:
+              produtoId:
+                type: integer
+              quantidade:
+                type: integer
+              precoUnitario:
+                type: number
+
+    UpdateVendaBody:
+      type: object
+      properties:
         status:
           type: string
-          enum: [planejada, ativa, concluida, cancelada]
-        imagemUrl:
+          enum: [pendente, parcial, quitada, cancelada]
+        observacoes:
           type: string
-
-    UpdateViagemBody:
-      type: object
-      properties:
-        destino:
-          type: string
-        descricao:
-          type: string
-        dataPartida:
-          type: string
-          format: date-time
-        dataRetorno:
-          type: string
-          format: date-time
-        assentosTotal:
-          type: integer
-        precoPorAssento:
-          type: number
-        paradasRota:
-          type: string
-        status:
-          type: string
-          enum: [planejada, ativa, concluida, cancelada]
-        imagemUrl:
-          type: string
-
-    ViagemOccupancy:
-      type: object
-      required: [viagemId, destino, assentosTotal, assentosVendidos, assentosDisponiveis, percentualOcupacao, receitaTotal, receitaPendente]
-      properties:
-        viagemId:
-          type: integer
-        destino:
-          type: string
-        assentosTotal:
-          type: integer
-        assentosVendidos:
-          type: integer
-        assentosDisponiveis:
-          type: integer
-        percentualOcupacao:
-          type: number
-        receitaTotal:
-          type: number
-        receitaPendente:
-          type: number
 
     # ── Cliente Schemas ────────────────────────────────
     Cliente:
@@ -828,11 +815,17 @@ components:
           type: string
         email:
           type: ["string", "null"]
+        cpf:
+          type: ["string", "null"]
+        endereco:
+          type: ["string", "null"]
+        bairro:
+          type: ["string", "null"]
         cidade:
           type: ["string", "null"]
         estado:
           type: ["string", "null"]
-        cpf:
+        referencia:
           type: ["string", "null"]
         observacoes:
           type: ["string", "null"]
@@ -855,11 +848,17 @@ components:
           type: string
         email:
           type: string
+        cpf:
+          type: string
+        endereco:
+          type: string
+        bairro:
+          type: string
         cidade:
           type: string
         estado:
           type: string
-        cpf:
+        referencia:
           type: string
         observacoes:
           type: string
@@ -876,11 +875,17 @@ components:
           type: string
         email:
           type: string
+        cpf:
+          type: string
+        endereco:
+          type: string
+        bairro:
+          type: string
         cidade:
           type: string
         estado:
           type: string
-        cpf:
+        referencia:
           type: string
         observacoes:
           type: string
@@ -890,115 +895,74 @@ components:
 
     ClienteHistory:
       type: object
-      required: [cliente, viagens, pagamentos]
+      required: [cliente, vendas, parcelas]
       properties:
         cliente:
           $ref: "#/components/schemas/Cliente"
-        viagens:
+        vendas:
           type: array
           items:
-            $ref: "#/components/schemas/Viagem"
-        pagamentos:
+            $ref: "#/components/schemas/Venda"
+        parcelas:
           type: array
           items:
-            $ref: "#/components/schemas/Pagamento"
+            $ref: "#/components/schemas/Parcela"
 
-    # ── Pagamento Schemas ──────────────────────────────
-    Pagamento:
+    # ── Parcela Schemas ──────────────────────────────
+    Parcela:
       type: object
-      required: [id, valor, metodo, status, dataVencimento, createdAt]
+      required: [id, vendaId, clienteId, clienteNome, numero, valor, dataVencimento, status, createdAt]
       properties:
         id:
           type: integer
+        vendaId:
+          type: integer
         clienteId:
-          type: ["integer", "null"]
+          type: integer
         clienteNome:
+          type: string
+        clienteTelefone:
           type: ["string", "null"]
-        viagemId:
-          type: ["integer", "null"]
-        viagemDestino:
-          type: ["string", "null"]
+        numero:
+          type: integer
+        totalParcelas:
+          type: integer
         valor:
           type: number
-        metodo:
-          type: string
-          enum: [pix, cartao, promissoria]
-        status:
-          type: string
-          enum: [pendente, pago, atrasado, cancelado]
         dataVencimento:
           type: string
-          format: date-time
         dataPagamento:
           type: ["string", "null"]
-          format: date-time
-        parcela:
-          type: ["integer", "null"]
-        totalParcelas:
-          type: ["integer", "null"]
-        observacoes:
+        metodoPagamento:
           type: ["string", "null"]
+          enum: [pix, dinheiro, cartao, promissoria, null]
+        status:
+          type: string
+          enum: [pendente, paga, atrasada, cancelada]
         createdAt:
           type: string
           format: date-time
 
-    CreatePagamentoBody:
-      type: object
-      required: [valor, metodo, dataVencimento]
-      properties:
-        clienteId:
-          type: integer
-        viagemId:
-          type: integer
-        valor:
-          type: number
-        metodo:
-          type: string
-          enum: [pix, cartao, promissoria]
-        status:
-          type: string
-          enum: [pendente, pago, atrasado, cancelado]
-        dataVencimento:
-          type: string
-          format: date-time
-        dataPagamento:
-          type: string
-          format: date-time
-        parcela:
-          type: integer
-        totalParcelas:
-          type: integer
-        observacoes:
-          type: string
-
-    UpdatePagamentoBody:
+    UpdateParcelaBody:
       type: object
       properties:
-        valor:
-          type: number
-        metodo:
-          type: string
-          enum: [pix, cartao, promissoria]
         status:
           type: string
-          enum: [pendente, pago, atrasado, cancelado]
-        dataVencimento:
-          type: string
-          format: date-time
+          enum: [pendente, paga, atrasada, cancelada]
         dataPagamento:
           type: string
-          format: date-time
-        parcela:
-          type: integer
-        totalParcelas:
-          type: integer
-        observacoes:
+        metodoPagamento:
           type: string
+          enum: [pix, dinheiro, cartao, promissoria]
+        dataVencimento:
+          type: string
+        valor:
+          type: number
 
     # ── Produto Schemas ────────────────────────────────
     Produto:
       type: object
-      required: [id, nome, preco, ativo, createdAt]
+      required: [id, nome, precoVenda, ativo, createdAt]
       properties:
         id:
           type: integer
@@ -1006,7 +970,9 @@ components:
           type: string
         descricao:
           type: ["string", "null"]
-        preco:
+        precoCusto:
+          type: ["number", "null"]
+        precoVenda:
           type: number
         imagemUrl:
           type: ["string", "null"]
@@ -1014,6 +980,8 @@ components:
           type: ["integer", "null"]
         categoriaNome:
           type: ["string", "null"]
+        estoque:
+          type: integer
         ativo:
           type: boolean
         createdAt:
@@ -1022,17 +990,21 @@ components:
 
     CreateProdutoBody:
       type: object
-      required: [nome, preco]
+      required: [nome, precoVenda]
       properties:
         nome:
           type: string
         descricao:
           type: string
-        preco:
+        precoCusto:
+          type: number
+        precoVenda:
           type: number
         imagemUrl:
           type: string
         categoriaId:
+          type: integer
+        estoque:
           type: integer
         ativo:
           type: boolean
@@ -1044,11 +1016,15 @@ components:
           type: string
         descricao:
           type: string
-        preco:
+        precoCusto:
+          type: number
+        precoVenda:
           type: number
         imagemUrl:
           type: string
         categoriaId:
+          type: integer
+        estoque:
           type: integer
         ativo:
           type: boolean
@@ -1096,6 +1072,8 @@ components:
           type: ["string", "null"]
         chavePix:
           type: ["string", "null"]
+        mensagemBoasVindas:
+          type: ["string", "null"]
 
     UpdateConfiguracoesBody:
       type: object
@@ -1115,4 +1093,6 @@ components:
         estado:
           type: string
         chavePix:
+          type: string
+        mensagemBoasVindas:
           type: string

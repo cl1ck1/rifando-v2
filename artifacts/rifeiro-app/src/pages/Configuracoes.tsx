@@ -4,134 +4,173 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { Save, Store, Link as LinkIcon, Smartphone, MapPin } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Settings, Save, CheckCircle } from "lucide-react";
 
 export default function Configuracoes() {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: config, isLoading } = useGetConfiguracoes();
   const updateConfig = useUpdateConfiguracoes();
 
-  const [form, setForm] = useState<any>({
+  const [form, setForm] = useState({
     nomeNegocio: "",
     telefoneWhatsapp: "",
+    logoUrl: "",
+    catalogoSlug: "",
+    catalogoAtivo: false,
     cidade: "",
     estado: "",
     chavePix: "",
-    catalogoAtivo: false,
-    catalogoSlug: ""
+    mensagemBoasVindas: "",
   });
+
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (config) {
       setForm({
         nomeNegocio: config.nomeNegocio || "",
         telefoneWhatsapp: config.telefoneWhatsapp || "",
+        logoUrl: config.logoUrl || "",
+        catalogoSlug: config.catalogoSlug || "",
+        catalogoAtivo: config.catalogoAtivo || false,
         cidade: config.cidade || "",
         estado: config.estado || "",
         chavePix: config.chavePix || "",
-        catalogoAtivo: config.catalogoAtivo || false,
-        catalogoSlug: config.catalogoSlug || ""
+        mensagemBoasVindas: config.mensagemBoasVindas || "",
       });
     }
   }, [config]);
 
-  const handleSave = () => {
-    updateConfig.mutate({
-      data: form
-    }, {
+  const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [field]: e.target.value });
+    setSaved(false);
+  };
+
+  const handleSubmit = () => {
+    updateConfig.mutate({ data: {
+      nomeNegocio: form.nomeNegocio || undefined,
+      telefoneWhatsapp: form.telefoneWhatsapp || undefined,
+      logoUrl: form.logoUrl || undefined,
+      catalogoSlug: form.catalogoSlug || undefined,
+      catalogoAtivo: form.catalogoAtivo,
+      cidade: form.cidade || undefined,
+      estado: form.estado || undefined,
+      chavePix: form.chavePix || undefined,
+      mensagemBoasVindas: form.mensagemBoasVindas || undefined,
+    }}, {
       onSuccess: () => {
-        toast({ title: "Sucesso", description: "Configurações salvas." });
         queryClient.invalidateQueries({ queryKey: getGetConfiguracoesQueryKey() });
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
       },
-      onError: () => {
-        toast({ title: "Erro", description: "Falha ao salvar as configurações.", variant: "destructive" });
-      }
     });
   };
 
   if (isLoading) {
-    return <div className="space-y-6 max-w-2xl"><Skeleton className="h-10 w-1/3" /><Skeleton className="h-[400px]" /></div>;
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
-        <p className="text-muted-foreground mt-1">Gerencie os dados da sua empresa e preferências do sistema.</p>
+        <h1 className="text-2xl font-bold text-foreground">Configuracoes</h1>
+        <p className="text-muted-foreground">Ajuste as configuracoes do seu negocio</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Store className="h-5 w-5" /> Dados do Negócio</CardTitle>
-          <CardDescription>Informações que aparecerão para seus clientes.</CardDescription>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            Dados do Negocio
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-2">
-            <Label>Nome da Agência / Excursão</Label>
-            <Input value={form.nomeNegocio} onChange={e => setForm({...form, nomeNegocio: e.target.value})} placeholder="Sua Empresa Turismo" />
+          <div>
+            <Label>Nome do Negocio</Label>
+            <Input value={form.nomeNegocio} onChange={handleChange("nomeNegocio")} placeholder="Ex: Maria Enxovais" />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label className="flex items-center gap-2"><Smartphone className="h-4 w-4" /> WhatsApp</Label>
-              <Input value={form.telefoneWhatsapp} onChange={e => setForm({...form, telefoneWhatsapp: e.target.value})} placeholder="(11) 99999-9999" />
+            <div>
+              <Label>Telefone WhatsApp</Label>
+              <Input value={form.telefoneWhatsapp} onChange={handleChange("telefoneWhatsapp")} placeholder="(99) 99999-9999" />
             </div>
-            <div className="grid gap-2">
-              <Label>Chave PIX Principal</Label>
-              <Input value={form.chavePix} onChange={e => setForm({...form, chavePix: e.target.value})} placeholder="CNPJ, E-mail ou Telefone" />
+            <div>
+              <Label>Chave Pix</Label>
+              <Input value={form.chavePix} onChange={handleChange("chavePix")} placeholder="CPF, email ou telefone" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label className="flex items-center gap-2"><MapPin className="h-4 w-4" /> Cidade Sede</Label>
-              <Input value={form.cidade} onChange={e => setForm({...form, cidade: e.target.value})} placeholder="São Paulo" />
+            <div>
+              <Label>Cidade</Label>
+              <Input value={form.cidade} onChange={handleChange("cidade")} placeholder="Sua cidade" />
             </div>
-            <div className="grid gap-2">
-              <Label>Estado (UF)</Label>
-              <Input value={form.estado} onChange={e => setForm({...form, estado: e.target.value})} placeholder="SP" maxLength={2} />
+            <div>
+              <Label>Estado</Label>
+              <Input value={form.estado} onChange={handleChange("estado")} placeholder="SP" />
             </div>
+          </div>
+          <div>
+            <Label>URL do Logo</Label>
+            <Input value={form.logoUrl} onChange={handleChange("logoUrl")} placeholder="https://..." />
           </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5" /> Link do Catálogo</CardTitle>
-          <CardDescription>Sua página pública onde clientes podem ver viagens abertas.</CardDescription>
+          <CardTitle className="text-base">Catalogo Virtual</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between border p-4 rounded-lg">
-            <div className="space-y-0.5">
-              <Label className="text-base">Catálogo Online</Label>
-              <p className="text-sm text-muted-foreground">Ativar página pública da sua agência</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Catalogo Ativo</p>
+              <p className="text-xs text-muted-foreground">Habilitar pagina publica do catalogo</p>
             </div>
-            <Switch checked={form.catalogoAtivo} onCheckedChange={v => setForm({...form, catalogoAtivo: v})} />
+            <Switch
+              checked={form.catalogoAtivo}
+              onCheckedChange={(checked) => { setForm({ ...form, catalogoAtivo: checked }); setSaved(false); }}
+            />
           </div>
-          
-          <div className="grid gap-2">
-            <Label>Identificador do Link (Slug)</Label>
-            <div className="flex items-center">
-              <span className="bg-muted border border-r-0 rounded-l-md px-3 py-2 text-sm text-muted-foreground">sourifeiro.com.br/c/</span>
-              <Input 
-                className="rounded-l-none" 
-                value={form.catalogoSlug} 
-                onChange={e => setForm({...form, catalogoSlug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')})} 
-                placeholder="sua-agencia" 
-                disabled={!form.catalogoAtivo}
-              />
-            </div>
+          <div>
+            <Label>Slug do Catalogo</Label>
+            <Input value={form.catalogoSlug} onChange={handleChange("catalogoSlug")} placeholder="meu-catalogo" />
+            {form.catalogoSlug && (
+              <p className="text-xs text-muted-foreground mt-1">URL: /catalogo/{form.catalogoSlug}</p>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={updateConfig.isPending} size="lg">
-          <Save className="h-4 w-4 mr-2" /> Salvar Configurações
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">WhatsApp</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label>Mensagem de Boas-vindas</Label>
+            <Input value={form.mensagemBoasVindas} onChange={handleChange("mensagemBoasVindas")} placeholder="Ola! Obrigado por entrar em contato..." />
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex items-center gap-3">
+        <Button onClick={handleSubmit} disabled={updateConfig.isPending} className="gap-2">
+          <Save className="w-4 h-4" />
+          {updateConfig.isPending ? "Salvando..." : "Salvar Configuracoes"}
         </Button>
+        {saved && (
+          <span className="text-sm text-green-600 flex items-center gap-1">
+            <CheckCircle className="w-4 h-4" /> Salvo com sucesso!
+          </span>
+        )}
       </div>
     </div>
   );

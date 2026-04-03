@@ -1,149 +1,203 @@
-import { useListProdutos, useCreateProduto, useUpdateProduto, useDeleteProduto, getListProdutosQueryKey } from "@workspace/api-client-react";
 import { useState } from "react";
+import { useListProdutos, useCreateProduto, useUpdateProduto, useDeleteProduto, useListCategorias, useCreateCategoria, getListProdutosQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { formatCurrency } from "@/lib/utils";
-import { Plus, Package, Image as ImageIcon, Trash2, Edit } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
+import { Plus, Package, Trash2, Edit } from "lucide-react";
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+}
 
 export default function Catalogo() {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: produtos, isLoading } = useListProdutos();
+  const { data: categorias } = useListCategorias();
   const createProduto = useCreateProduto();
-  const updateProduto = useUpdateProduto();
   const deleteProduto = useDeleteProduto();
+  const createCategoria = useCreateCategoria();
 
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [nome, setNome] = useState("");
-  const [preco, setPreco] = useState("");
-  const [descricao, setDescricao] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [newCategoria, setNewCategoria] = useState("");
+  const [form, setForm] = useState({
+    nome: "", descricao: "", precoCusto: "", precoVenda: "",
+    categoriaId: "", estoque: "0", imagemUrl: "",
+  });
 
-  const handleCreate = () => {
-    if (!nome || !preco) {
-      toast({ title: "Erro", description: "Nome e preço são obrigatórios.", variant: "destructive" });
-      return;
-    }
-
-    createProduto.mutate({
-      data: {
-        nome,
-        preco: parseFloat(preco),
-        descricao,
-        ativo: true
-      }
-    }, {
-      onSuccess: () => {
-        toast({ title: "Sucesso", description: "Produto adicionado ao catálogo." });
-        setIsCreateOpen(false);
-        setNome(""); setPreco(""); setDescricao("");
-        queryClient.invalidateQueries({ queryKey: getListProdutosQueryKey() });
-      }
-    });
+  const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [field]: e.target.value });
   };
 
-  const handleToggleAtivo = (id: number, ativo: boolean) => {
-    updateProduto.mutate({ id, data: { ativo } }, {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: getListProdutosQueryKey() })
+  const handleSubmit = () => {
+    if (!form.nome || !form.precoVenda) return;
+    createProduto.mutate({ data: {
+      nome: form.nome,
+      descricao: form.descricao || undefined,
+      precoCusto: form.precoCusto ? parseFloat(form.precoCusto) : undefined,
+      precoVenda: parseFloat(form.precoVenda),
+      categoriaId: form.categoriaId ? parseInt(form.categoriaId, 10) : undefined,
+      estoque: parseInt(form.estoque, 10),
+      imagemUrl: form.imagemUrl || undefined,
+    }}, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListProdutosQueryKey() });
+        setDialogOpen(false);
+        setForm({ nome: "", descricao: "", precoCusto: "", precoVenda: "", categoriaId: "", estoque: "0", imagemUrl: "" });
+      },
     });
   };
 
   const handleDelete = (id: number) => {
-    if (!confirm("Excluir produto?")) return;
     deleteProduto.mutate({ id }, {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: getListProdutosQueryKey() })
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: getListProdutosQueryKey() }),
     });
   };
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+  const handleAddCategoria = () => {
+    if (!newCategoria) return;
+    createCategoria.mutate({ data: { nome: newCategoria } }, {
+      onSuccess: () => {
+        setNewCategoria("");
+        queryClient.invalidateQueries({ queryKey: ["listCategorias"] });
+      },
+    });
+  };
+
+  const margem = (custo: number | null, venda: number) => {
+    if (!custo || custo === 0) return null;
+    return ((venda - custo) / custo * 100).toFixed(0);
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Catálogo</h1>
-          <p className="text-muted-foreground mt-1">Produtos e serviços extras vendidos aos passageiros.</p>
+          <h1 className="text-2xl font-bold text-foreground">Produtos</h1>
+          <p className="text-muted-foreground">Gerencie seu catalogo de produtos</p>
         </div>
-
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" /> Adicionar Produto
-            </Button>
+            <Button className="gap-2"><Plus className="w-4 h-4" /> Novo Produto</Button>
           </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Novo Produto</DialogTitle></DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Novo Produto</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
                 <Label>Nome *</Label>
-                <Input value={nome} onChange={e => setNome(e.target.value)} />
+                <Input value={form.nome} onChange={handleChange("nome")} placeholder="Nome do produto" />
               </div>
-              <div className="grid gap-2">
-                <Label>Preço (R$) *</Label>
-                <Input type="number" step="0.01" value={preco} onChange={e => setPreco(e.target.value)} />
+              <div>
+                <Label>Descricao</Label>
+                <Input value={form.descricao} onChange={handleChange("descricao")} placeholder="Descricao do produto" />
               </div>
-              <div className="grid gap-2">
-                <Label>Descrição</Label>
-                <Input value={descricao} onChange={e => setDescricao(e.target.value)} />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Preco de Custo (R$)</Label>
+                  <Input type="number" step="0.01" value={form.precoCusto} onChange={handleChange("precoCusto")} placeholder="0.00" />
+                </div>
+                <div>
+                  <Label>Preco de Venda (R$) *</Label>
+                  <Input type="number" step="0.01" value={form.precoVenda} onChange={handleChange("precoVenda")} placeholder="0.00" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Categoria</Label>
+                  <Select value={form.categoriaId} onValueChange={(v) => setForm({ ...form, categoriaId: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                    <SelectContent>
+                      {categorias?.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>{c.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Estoque</Label>
+                  <Input type="number" min="0" value={form.estoque} onChange={handleChange("estoque")} />
+                </div>
+              </div>
+              <div>
+                <Label>URL da Imagem</Label>
+                <Input value={form.imagemUrl} onChange={handleChange("imagemUrl")} placeholder="https://..." />
+              </div>
+              <div className="border-t pt-4">
+                <Label>Nova Categoria</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input value={newCategoria} onChange={(e) => setNewCategoria(e.target.value)} placeholder="Nome da categoria" />
+                  <Button type="button" variant="outline" onClick={handleAddCategoria}>Adicionar</Button>
+                </div>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancelar</Button>
-              <Button onClick={handleCreate} disabled={createProduto.isPending}>Salvar</Button>
+              <Button onClick={handleSubmit} disabled={!form.nome || !form.precoVenda || createProduto.isPending}>
+                {createProduto.isPending ? "Salvando..." : "Cadastrar Produto"}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
-        {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i} className="overflow-hidden">
-              <Skeleton className="h-40 w-full rounded-none" />
-              <CardContent className="p-4 space-y-2">
-                <Skeleton className="h-5 w-3/4" />
-                <Skeleton className="h-6 w-1/2" />
-              </CardContent>
-            </Card>
-          ))
-        ) : produtos?.length === 0 ? (
-          <div className="col-span-full py-12 text-center text-muted-foreground border rounded-lg bg-card border-dashed">
-            <Package className="h-12 w-12 mx-auto mb-4 opacity-20" />
-            <p>Seu catálogo está vazio.</p>
-          </div>
-        ) : (
-          produtos?.map((prod) => (
-            <Card key={prod.id} className={`overflow-hidden hover-elevate transition-all ${!prod.ativo ? 'opacity-60 grayscale' : ''}`}>
-              <div className="h-40 bg-muted flex items-center justify-center relative border-b">
-                {prod.imagemUrl ? (
-                  <img src={prod.imagemUrl} alt={prod.nome} className="w-full h-full object-cover" />
-                ) : (
-                  <ImageIcon className="h-10 w-10 text-muted-foreground opacity-30" />
-                )}
-                <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded-md flex items-center gap-2">
-                  <span className="text-xs font-medium">{prod.ativo ? 'Ativo' : 'Inativo'}</span>
-                  <Switch checked={prod.ativo} onCheckedChange={(v) => handleToggleAtivo(prod.id, v)} />
-                </div>
-              </div>
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-lg truncate" title={prod.nome}>{prod.nome}</h3>
-                <p className="text-xl font-bold text-primary mt-1">{fmtCurrency(prod.preco)}</p>
-                <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
-                  <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => handleDelete(prod.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+      {isLoading ? (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-40 w-full" />)}
+        </div>
+      ) : produtos && produtos.length > 0 ? (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {produtos.map((p) => {
+            const m = margem(p.precoCusto, p.precoVenda);
+            return (
+              <Card key={p.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
+                        <Package className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{p.nome}</p>
+                        {p.categoriaNome && <Badge variant="outline" className="text-xs mt-1">{p.categoriaNome}</Badge>}
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)} className="text-destructive">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  {p.descricao && <p className="text-sm text-muted-foreground mb-3">{p.descricao}</p>}
+                  <div className="flex items-center justify-between text-sm">
+                    <div>
+                      {p.precoCusto !== null && (
+                        <p className="text-muted-foreground">Custo: {formatCurrency(p.precoCusto)}</p>
+                      )}
+                      <p className="font-semibold text-foreground text-lg">{formatCurrency(p.precoVenda)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-muted-foreground">Estoque: {p.estoque}</p>
+                      {m && <p className="text-green-600 font-medium">+{m}% margem</p>}
+                    </div>
+                  </div>
+                  {!p.ativo && <Badge variant="secondary" className="mt-2">Inativo</Badge>}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Package className="w-12 h-12 mx-auto text-muted-foreground/40 mb-4" />
+            <p className="text-muted-foreground">Nenhum produto cadastrado</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

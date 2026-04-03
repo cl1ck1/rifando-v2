@@ -3,45 +3,75 @@ import { db } from "@workspace/db";
 import { configuracoesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
-import { UpdateConfiguracoesBody } from "@workspace/api-zod";
 
 const router = Router();
 
 router.get("/configuracoes", requireAuth, async (req, res) => {
   const { userId } = req as AuthRequest;
-  try {
-    let [row] = await db.select().from(configuracoesTable)
-      .where(eq(configuracoesTable.userId, userId));
-    if (!row) {
-      [row] = await db.insert(configuracoesTable).values({ userId }).returning();
-    }
-    res.json(row);
-  } catch (e) {
-    res.status(500).json({ error: "Internal server error" });
+
+  let results = await db.select().from(configuracoesTable)
+    .where(eq(configuracoesTable.userId, userId))
+    .limit(1);
+
+  if (results.length === 0) {
+    const [created] = await db.insert(configuracoesTable).values({ userId }).returning();
+    results = [created];
   }
+
+  const c = results[0];
+  res.json({
+    id: c.id,
+    nomeNegocio: c.nomeNegocio,
+    telefoneWhatsapp: c.telefoneWhatsapp,
+    logoUrl: c.logoUrl,
+    catalogoSlug: c.catalogoSlug,
+    catalogoAtivo: c.catalogoAtivo,
+    cidade: c.cidade,
+    estado: c.estado,
+    chavePix: c.chavePix,
+    mensagemBoasVindas: c.mensagemBoasVindas,
+  });
 });
 
 router.put("/configuracoes", requireAuth, async (req, res) => {
   const { userId } = req as AuthRequest;
-  try {
-    const parsed = UpdateConfiguracoesBody.safeParse(req.body);
-    if (!parsed.success) { res.status(400).json({ error: parsed.error.issues }); return; }
 
-    const existing = await db.select().from(configuracoesTable)
-      .where(eq(configuracoesTable.userId, userId));
+  let existing = await db.select().from(configuracoesTable)
+    .where(eq(configuracoesTable.userId, userId))
+    .limit(1);
 
-    let row;
-    if (existing.length === 0) {
-      [row] = await db.insert(configuracoesTable).values({ ...parsed.data, userId }).returning();
-    } else {
-      [row] = await db.update(configuracoesTable).set(parsed.data)
-        .where(eq(configuracoesTable.userId, userId))
-        .returning();
-    }
-    res.json(row);
-  } catch (e) {
-    res.status(500).json({ error: "Internal server error" });
+  if (existing.length === 0) {
+    await db.insert(configuracoesTable).values({ userId });
   }
+
+  const updates: Record<string, string | boolean | null> = {};
+  const fields = ["nomeNegocio", "telefoneWhatsapp", "logoUrl", "catalogoSlug", "cidade", "estado", "chavePix", "mensagemBoasVindas"] as const;
+  for (const field of fields) {
+    if (req.body[field] !== undefined) {
+      updates[field] = req.body[field];
+    }
+  }
+  if (req.body.catalogoAtivo !== undefined) {
+    updates.catalogoAtivo = req.body.catalogoAtivo;
+  }
+
+  const [updated] = await db.update(configuracoesTable)
+    .set(updates)
+    .where(eq(configuracoesTable.userId, userId))
+    .returning();
+
+  res.json({
+    id: updated.id,
+    nomeNegocio: updated.nomeNegocio,
+    telefoneWhatsapp: updated.telefoneWhatsapp,
+    logoUrl: updated.logoUrl,
+    catalogoSlug: updated.catalogoSlug,
+    catalogoAtivo: updated.catalogoAtivo,
+    cidade: updated.cidade,
+    estado: updated.estado,
+    chavePix: updated.chavePix,
+    mensagemBoasVindas: updated.mensagemBoasVindas,
+  });
 });
 
 export default router;
