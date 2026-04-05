@@ -1154,8 +1154,10 @@ components:
           enum: [ativo, inativo]
         tagLocalizacao:
           type: string
+          nullable: true
         rotaParadaId:
           type: integer
+          nullable: true
 
     ClienteHistory:
       type: object

@@ -110,9 +110,10 @@ export default function Clientes() {
   const handleSubmit = () => {
     if (!form.nome || !form.telefone) return;
 
+    const isEditing = editingId !== null;
     const paradaId = form.rotaParadaId && form.rotaParadaId !== "nenhuma"
       ? parseInt(form.rotaParadaId, 10)
-      : undefined;
+      : isEditing ? null : undefined;
 
     const payload = {
       nome: form.nome,
@@ -125,7 +126,7 @@ export default function Clientes() {
       estado: form.estado || undefined,
       referencia: form.referencia || undefined,
       observacoes: form.observacoes || undefined,
-      tagLocalizacao: form.tagLocalizacao || undefined,
+      tagLocalizacao: form.tagLocalizacao || null,
       rotaParadaId: paradaId,
     } as Parameters<typeof createCliente.mutate>[0]["data"];
 

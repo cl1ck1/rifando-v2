@@ -602,8 +602,8 @@ export const UpdateClienteBody = zod.object({
   referencia: zod.string().optional(),
   observacoes: zod.string().optional(),
   status: zod.enum(["ativo", "inativo"]).optional(),
-  tagLocalizacao: zod.string().optional(),
-  rotaParadaId: zod.number().optional(),
+  tagLocalizacao: zod.string().nullish(),
+  rotaParadaId: zod.number().nullish(),
 });
 
 export const UpdateClienteResponse = zod.object({

@@ -272,8 +272,8 @@ export interface UpdateClienteBody {
   referencia?: string;
   observacoes?: string;
   status?: UpdateClienteBodyStatus;
-  tagLocalizacao?: string;
-  rotaParadaId?: number;
+  tagLocalizacao?: string | null;
+  rotaParadaId?: number | null;
 }
 
 export interface ClienteHistory {
