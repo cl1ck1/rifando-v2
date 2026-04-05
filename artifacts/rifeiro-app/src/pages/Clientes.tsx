@@ -63,6 +63,7 @@ export default function Clientes() {
   const { data: clientes, isLoading } = useListClientes({
     search: search || undefined,
     rotaParadaId: filtroRotaParadaId,
+    rotaId: filtroRotaId && filtroRotaId !== "todas" ? parseInt(filtroRotaId, 10) : undefined,
     tagLocalizacao: filtroTag || undefined,
   } as Parameters<typeof useListClientes>[0]);
 

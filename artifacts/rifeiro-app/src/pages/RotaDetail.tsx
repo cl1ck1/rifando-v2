@@ -341,14 +341,6 @@ export default function RotaDetail() {
                   {mapsLoaded ? (
                     <div className="space-y-3">
                       <BuscaParadaGoogleMaps onAdd={handleAddParada} />
-                      <Button
-                        onClick={() => {}}
-                        disabled={createParada.isPending}
-                        className="gap-2"
-                        style={{ display: "none" }}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
                     </div>
                   ) : (
                     <Skeleton className="h-10 w-full" />

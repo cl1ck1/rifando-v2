@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { clientesTable, vendasTable, parcelasTable, atividadesTable } from "@workspace/db";
-import { eq, and, sql, ilike, or } from "drizzle-orm";
+import { clientesTable, vendasTable, parcelasTable, atividadesTable, rotaParadasTable } from "@workspace/db";
+import { eq, and, sql, ilike, or, inArray } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
 import {
   ListClientesQueryParams,
@@ -60,11 +60,23 @@ router.get("/clientes", requireAuth, async (req, res): Promise<void> => {
       )!
     );
   }
-  if ((query.data as { tagLocalizacao?: string }).tagLocalizacao) {
-    conditions.push(ilike(clientesTable.tagLocalizacao, `%${(query.data as { tagLocalizacao?: string }).tagLocalizacao}%`));
+  if (query.data.tagLocalizacao) {
+    conditions.push(ilike(clientesTable.tagLocalizacao, `%${query.data.tagLocalizacao}%`));
   }
-  if ((query.data as { rotaParadaId?: number }).rotaParadaId) {
-    conditions.push(eq(clientesTable.rotaParadaId, (query.data as { rotaParadaId?: number }).rotaParadaId!));
+  if (query.data.rotaParadaId) {
+    conditions.push(eq(clientesTable.rotaParadaId, query.data.rotaParadaId));
+  }
+  if (query.data.rotaId) {
+    const paradas = await db
+      .select({ id: rotaParadasTable.id })
+      .from(rotaParadasTable)
+      .where(and(eq(rotaParadasTable.rotaId, query.data.rotaId), eq(rotaParadasTable.userId, userId)));
+    const paradaIds = paradas.map((p) => p.id);
+    if (paradaIds.length === 0) {
+      res.json([]);
+      return;
+    }
+    conditions.push(inArray(clientesTable.rotaParadaId, paradaIds));
   }
 
   const clientes = await db.select().from(clientesTable)
@@ -83,6 +95,18 @@ router.post("/clientes", requireAuth, async (req, res): Promise<void> => {
   }
 
   const data = parsed.data as typeof parsed.data & { tagLocalizacao?: string; rotaParadaId?: number };
+
+  if (data.rotaParadaId) {
+    const parada = await db
+      .select({ id: rotaParadasTable.id })
+      .from(rotaParadasTable)
+      .where(and(eq(rotaParadasTable.id, data.rotaParadaId), eq(rotaParadasTable.userId, userId)))
+      .limit(1);
+    if (parada.length === 0) {
+      res.status(400).json({ error: "Parada nao encontrada ou sem permissao" });
+      return;
+    }
+  }
 
   const [created] = await db.insert(clientesTable).values({
     userId,
@@ -157,6 +181,19 @@ router.patch("/clientes/:id", requireAuth, async (req, res): Promise<void> => {
 
   const updates: Record<string, string | number | null> = {};
   const data = parsed.data as typeof parsed.data & { tagLocalizacao?: string; rotaParadaId?: number | null };
+
+  if (data.rotaParadaId) {
+    const parada = await db
+      .select({ id: rotaParadasTable.id })
+      .from(rotaParadasTable)
+      .where(and(eq(rotaParadasTable.id, data.rotaParadaId), eq(rotaParadasTable.userId, userId)))
+      .limit(1);
+    if (parada.length === 0) {
+      res.status(400).json({ error: "Parada nao encontrada ou sem permissao" });
+      return;
+    }
+  }
+
   if (data.nome !== undefined) updates.nome = data.nome;
   if (data.telefone !== undefined) updates.telefone = data.telefone;
   if (data.email !== undefined) updates.email = data.email ?? null;

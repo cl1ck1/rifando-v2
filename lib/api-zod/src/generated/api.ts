@@ -515,6 +515,7 @@ export const ListClientesQueryParams = zod.object({
   cidade: zod.coerce.string().optional(),
   tagLocalizacao: zod.coerce.string().optional(),
   rotaParadaId: zod.coerce.number().optional(),
+  rotaId: zod.coerce.number().optional(),
 });
 
 export const ListClientesResponseItem = zod.object({
