@@ -237,8 +237,8 @@ router.delete("/rotas/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  await db.delete(rotaParadasTable).where(eq(rotaParadasTable.rotaId, id));
-  await db.delete(rotasTable).where(eq(rotasTable.id, id));
+  await db.delete(rotaParadasTable).where(and(eq(rotaParadasTable.rotaId, id), eq(rotaParadasTable.userId, userId)));
+  await db.delete(rotasTable).where(and(eq(rotasTable.id, id), eq(rotasTable.userId, userId)));
   res.sendStatus(204);
 });
 
@@ -399,7 +399,7 @@ router.delete("/rotas/:id/paradas/:paradaId", requireAuth, async (req, res): Pro
     return;
   }
 
-  await db.delete(rotaParadasTable).where(eq(rotaParadasTable.id, paradaId));
+  await db.delete(rotaParadasTable).where(and(eq(rotaParadasTable.id, paradaId), eq(rotaParadasTable.userId, userId)));
   res.sendStatus(204);
 });
 

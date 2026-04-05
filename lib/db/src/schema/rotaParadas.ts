@@ -1,8 +1,9 @@
 import { pgTable, serial, integer, text, numeric, timestamp } from "drizzle-orm/pg-core";
+import { rotasTable } from "./rotas";
 
 export const rotaParadasTable = pgTable("rota_paradas", {
   id: serial("id").primaryKey(),
-  rotaId: integer("rota_id").notNull(),
+  rotaId: integer("rota_id").notNull().references(() => rotasTable.id, { onDelete: "cascade" }),
   userId: text("user_id").notNull(),
   ordem: integer("ordem").notNull().default(0),
   nome: text("nome").notNull(),
