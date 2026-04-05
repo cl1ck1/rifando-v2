@@ -15,6 +15,27 @@ import {
 
 const router: IRouter = Router();
 
+function mapCliente(c: typeof clientesTable.$inferSelect) {
+  return {
+    id: c.id,
+    nome: c.nome,
+    telefone: c.telefone,
+    email: c.email,
+    cpf: c.cpf,
+    endereco: c.endereco,
+    bairro: c.bairro,
+    cidade: c.cidade,
+    estado: c.estado,
+    referencia: c.referencia,
+    observacoes: c.observacoes,
+    status: c.status,
+    totalCompras: Number(c.totalCompras),
+    tagLocalizacao: c.tagLocalizacao,
+    rotaParadaId: c.rotaParadaId,
+    createdAt: c.createdAt.toISOString(),
+  };
+}
+
 router.get("/clientes", requireAuth, async (req, res): Promise<void> => {
   const { userId } = req as AuthRequest;
   const query = ListClientesQueryParams.safeParse(req.query);
@@ -39,27 +60,18 @@ router.get("/clientes", requireAuth, async (req, res): Promise<void> => {
       )!
     );
   }
+  if ((query.data as { tagLocalizacao?: string }).tagLocalizacao) {
+    conditions.push(ilike(clientesTable.tagLocalizacao, `%${(query.data as { tagLocalizacao?: string }).tagLocalizacao}%`));
+  }
+  if ((query.data as { rotaParadaId?: number }).rotaParadaId) {
+    conditions.push(eq(clientesTable.rotaParadaId, (query.data as { rotaParadaId?: number }).rotaParadaId!));
+  }
 
   const clientes = await db.select().from(clientesTable)
     .where(and(...conditions))
     .orderBy(sql`${clientesTable.nome} ASC`);
 
-  res.json(clientes.map((c) => ({
-    id: c.id,
-    nome: c.nome,
-    telefone: c.telefone,
-    email: c.email,
-    cpf: c.cpf,
-    endereco: c.endereco,
-    bairro: c.bairro,
-    cidade: c.cidade,
-    estado: c.estado,
-    referencia: c.referencia,
-    observacoes: c.observacoes,
-    status: c.status,
-    totalCompras: Number(c.totalCompras),
-    createdAt: c.createdAt.toISOString(),
-  })));
+  res.json(clientes.map(mapCliente));
 });
 
 router.post("/clientes", requireAuth, async (req, res): Promise<void> => {
@@ -70,19 +82,23 @@ router.post("/clientes", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
+  const data = parsed.data as typeof parsed.data & { tagLocalizacao?: string; rotaParadaId?: number };
+
   const [created] = await db.insert(clientesTable).values({
     userId,
-    nome: parsed.data.nome,
-    telefone: parsed.data.telefone,
-    email: parsed.data.email || null,
-    cpf: parsed.data.cpf || null,
-    endereco: parsed.data.endereco || null,
-    bairro: parsed.data.bairro || null,
-    cidade: parsed.data.cidade || null,
-    estado: parsed.data.estado || null,
-    referencia: parsed.data.referencia || null,
-    observacoes: parsed.data.observacoes || null,
-    status: parsed.data.status || "ativo",
+    nome: data.nome,
+    telefone: data.telefone,
+    email: data.email || null,
+    cpf: data.cpf || null,
+    endereco: data.endereco || null,
+    bairro: data.bairro || null,
+    cidade: data.cidade || null,
+    estado: data.estado || null,
+    referencia: data.referencia || null,
+    observacoes: data.observacoes || null,
+    status: data.status || "ativo",
+    tagLocalizacao: data.tagLocalizacao || null,
+    rotaParadaId: data.rotaParadaId || null,
   }).returning();
 
   await db.insert(atividadesTable).values({
@@ -91,22 +107,7 @@ router.post("/clientes", requireAuth, async (req, res): Promise<void> => {
     description: `Novo cliente cadastrado: ${created.nome}`,
   });
 
-  res.status(201).json({
-    id: created.id,
-    nome: created.nome,
-    telefone: created.telefone,
-    email: created.email,
-    cpf: created.cpf,
-    endereco: created.endereco,
-    bairro: created.bairro,
-    cidade: created.cidade,
-    estado: created.estado,
-    referencia: created.referencia,
-    observacoes: created.observacoes,
-    status: created.status,
-    totalCompras: Number(created.totalCompras),
-    createdAt: created.createdAt.toISOString(),
-  });
+  res.status(201).json(mapCliente(created));
 });
 
 router.get("/clientes/:id", requireAuth, async (req, res): Promise<void> => {
@@ -127,23 +128,7 @@ router.get("/clientes/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const c = results[0];
-  res.json({
-    id: c.id,
-    nome: c.nome,
-    telefone: c.telefone,
-    email: c.email,
-    cpf: c.cpf,
-    endereco: c.endereco,
-    bairro: c.bairro,
-    cidade: c.cidade,
-    estado: c.estado,
-    referencia: c.referencia,
-    observacoes: c.observacoes,
-    status: c.status,
-    totalCompras: Number(c.totalCompras),
-    createdAt: c.createdAt.toISOString(),
-  });
+  res.json(mapCliente(results[0]));
 });
 
 router.patch("/clientes/:id", requireAuth, async (req, res): Promise<void> => {
@@ -170,8 +155,8 @@ router.patch("/clientes/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const updates: Record<string, string | null> = {};
-  const data = parsed.data;
+  const updates: Record<string, string | number | null> = {};
+  const data = parsed.data as typeof parsed.data & { tagLocalizacao?: string; rotaParadaId?: number | null };
   if (data.nome !== undefined) updates.nome = data.nome;
   if (data.telefone !== undefined) updates.telefone = data.telefone;
   if (data.email !== undefined) updates.email = data.email ?? null;
@@ -183,25 +168,12 @@ router.patch("/clientes/:id", requireAuth, async (req, res): Promise<void> => {
   if (data.referencia !== undefined) updates.referencia = data.referencia ?? null;
   if (data.observacoes !== undefined) updates.observacoes = data.observacoes ?? null;
   if (data.status !== undefined) updates.status = data.status;
+  if (data.tagLocalizacao !== undefined) updates.tagLocalizacao = data.tagLocalizacao ?? null;
+  if (data.rotaParadaId !== undefined) updates.rotaParadaId = data.rotaParadaId ?? null;
 
   const [updated] = await db.update(clientesTable).set(updates).where(eq(clientesTable.id, id)).returning();
 
-  res.json({
-    id: updated.id,
-    nome: updated.nome,
-    telefone: updated.telefone,
-    email: updated.email,
-    cpf: updated.cpf,
-    endereco: updated.endereco,
-    bairro: updated.bairro,
-    cidade: updated.cidade,
-    estado: updated.estado,
-    referencia: updated.referencia,
-    observacoes: updated.observacoes,
-    status: updated.status,
-    totalCompras: Number(updated.totalCompras),
-    createdAt: updated.createdAt.toISOString(),
-  });
+  res.json(mapCliente(updated));
 });
 
 router.delete("/clientes/:id", requireAuth, async (req, res): Promise<void> => {
@@ -254,22 +226,7 @@ router.get("/clientes/:id/history", requireAuth, async (req, res): Promise<void>
     .orderBy(sql`${parcelasTable.dataVencimento} ASC`);
 
   res.json({
-    cliente: {
-      id: c.id,
-      nome: c.nome,
-      telefone: c.telefone,
-      email: c.email,
-      cpf: c.cpf,
-      endereco: c.endereco,
-      bairro: c.bairro,
-      cidade: c.cidade,
-      estado: c.estado,
-      referencia: c.referencia,
-      observacoes: c.observacoes,
-      status: c.status,
-      totalCompras: Number(c.totalCompras),
-      createdAt: c.createdAt.toISOString(),
-    },
+    cliente: mapCliente(c),
     vendas: vendas.map((v) => ({
       id: v.id,
       clienteId: v.clienteId,

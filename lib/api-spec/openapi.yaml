@@ -26,6 +26,8 @@ tags:
     description: Account settings
   - name: catalogo-publico
     description: Public virtual catalog (no auth)
+  - name: rotas
+    description: Travel routes management
 
 paths:
   /healthz:
@@ -258,6 +260,213 @@ paths:
         "204":
           description: Deleted
 
+  # ── Rotas (Travel Routes) ──────────────────────────
+  /rotas:
+    get:
+      operationId: listRotas
+      tags: [rotas]
+      summary: List all travel routes
+      responses:
+        "200":
+          description: List of routes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Rota"
+    post:
+      operationId: createRota
+      tags: [rotas]
+      summary: Create a new travel route
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRotaBody"
+      responses:
+        "201":
+          description: Created route
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rota"
+
+  /rotas/{id}:
+    get:
+      operationId: getRota
+      tags: [rotas]
+      summary: Get a single route with its stops
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Route with stops
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RotaComParadas"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateRota
+      tags: [rotas]
+      summary: Update a route
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRotaBody"
+      responses:
+        "200":
+          description: Updated route
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rota"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteRota
+      tags: [rotas]
+      summary: Delete a route
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /rotas/{id}/paradas:
+    get:
+      operationId: listRotaParadas
+      tags: [rotas]
+      summary: List stops for a route
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of stops
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RotaParada"
+    post:
+      operationId: createRotaParada
+      tags: [rotas]
+      summary: Add a stop to a route
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRotaParadaBody"
+      responses:
+        "201":
+          description: Created stop
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RotaParada"
+
+  /rotas/{id}/paradas/{paradaId}:
+    patch:
+      operationId: updateRotaParada
+      tags: [rotas]
+      summary: Update a route stop
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: paradaId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRotaParadaBody"
+      responses:
+        "200":
+          description: Updated stop
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RotaParada"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteRotaParada
+      tags: [rotas]
+      summary: Delete a route stop
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: paradaId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /rotas/{id}/clientes:
+    get:
+      operationId: getRotaClientes
+      tags: [rotas]
+      summary: Get clients grouped by route stop
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Clients grouped by stop
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RotaClientesResponse"
+        "404":
+          description: Not found
+
   # ── Clientes (Customers) ───────────────────────────
   /clientes:
     get:
@@ -278,6 +487,14 @@ paths:
           in: query
           schema:
             type: string
+        - name: tagLocalizacao
+          in: query
+          schema:
+            type: string
+        - name: rotaParadaId
+          in: query
+          schema:
+            type: integer
       responses:
         "200":
           description: List of customers
@@ -865,6 +1082,10 @@ components:
           enum: [ativo, inativo]
         totalCompras:
           type: number
+        tagLocalizacao:
+          type: ["string", "null"]
+        rotaParadaId:
+          type: ["integer", "null"]
         createdAt:
           type: string
           format: date-time
@@ -896,6 +1117,10 @@ components:
         status:
           type: string
           enum: [ativo, inativo]
+        tagLocalizacao:
+          type: string
+        rotaParadaId:
+          type: integer
 
     UpdateClienteBody:
       type: object
@@ -923,6 +1148,10 @@ components:
         status:
           type: string
           enum: [ativo, inativo]
+        tagLocalizacao:
+          type: string
+        rotaParadaId:
+          type: integer
 
     ClienteHistory:
       type: object
@@ -1198,3 +1427,148 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CatalogoPublicoProduto"
+
+    # ── Rota Schemas ───────────────────────────────────
+    Rota:
+      type: object
+      required: [id, nome, cor, status, createdAt]
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        descricao:
+          type: ["string", "null"]
+        cor:
+          type: string
+        status:
+          type: string
+          enum: [planejada, em_andamento, concluida, cancelada]
+        totalParadas:
+          type: integer
+        totalClientes:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateRotaBody:
+      type: object
+      required: [nome]
+      properties:
+        nome:
+          type: string
+        descricao:
+          type: string
+        cor:
+          type: string
+        status:
+          type: string
+          enum: [planejada, em_andamento, concluida, cancelada]
+
+    UpdateRotaBody:
+      type: object
+      properties:
+        nome:
+          type: string
+        descricao:
+          type: string
+        cor:
+          type: string
+        status:
+          type: string
+          enum: [planejada, em_andamento, concluida, cancelada]
+
+    RotaParada:
+      type: object
+      required: [id, rotaId, ordem, nome, createdAt]
+      properties:
+        id:
+          type: integer
+        rotaId:
+          type: integer
+        ordem:
+          type: integer
+        nome:
+          type: string
+        estado:
+          type: ["string", "null"]
+        enderecoCompleto:
+          type: ["string", "null"]
+        lat:
+          type: ["number", "null"]
+        lng:
+          type: ["number", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateRotaParadaBody:
+      type: object
+      required: [nome]
+      properties:
+        nome:
+          type: string
+        estado:
+          type: string
+        enderecoCompleto:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        ordem:
+          type: integer
+
+    UpdateRotaParadaBody:
+      type: object
+      properties:
+        nome:
+          type: string
+        estado:
+          type: string
+        enderecoCompleto:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        ordem:
+          type: integer
+
+    RotaComParadas:
+      type: object
+      required: [rota, paradas]
+      properties:
+        rota:
+          $ref: "#/components/schemas/Rota"
+        paradas:
+          type: array
+          items:
+            $ref: "#/components/schemas/RotaParada"
+
+    RotaClientesParada:
+      type: object
+      required: [parada, clientes]
+      properties:
+        parada:
+          $ref: "#/components/schemas/RotaParada"
+        clientes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Cliente"
+
+    RotaClientesResponse:
+      type: object
+      required: [rota, paradas]
+      properties:
+        rota:
+          $ref: "#/components/schemas/Rota"
+        paradas:
+          type: array
+          items:
+            $ref: "#/components/schemas/RotaClientesParada"
+        semParada:
+          type: array
+          items:
+            $ref: "#/components/schemas/Cliente"

@@ -11,4 +11,6 @@ export type ListClientesParams = {
   search?: string;
   status?: ListClientesStatus;
   cidade?: string;
+  tagLocalizacao?: string;
+  rotaParadaId?: number;
 };

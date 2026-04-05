@@ -19,4 +19,6 @@ export interface UpdateClienteBody {
   referencia?: string;
   observacoes?: string;
   status?: UpdateClienteBodyStatus;
+  tagLocalizacao?: string;
+  rotaParadaId?: number;
 }

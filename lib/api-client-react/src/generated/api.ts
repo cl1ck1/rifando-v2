@@ -26,6 +26,8 @@ import type {
   CreateCategoriaBody,
   CreateClienteBody,
   CreateProdutoBody,
+  CreateRotaBody,
+  CreateRotaParadaBody,
   CreateVendaBody,
   DashboardSummary,
   GetCatalogoPublico404,
@@ -40,11 +42,17 @@ import type {
   Parcela,
   ParcelaAtrasadaItem,
   Produto,
+  Rota,
+  RotaClientesResponse,
+  RotaComParadas,
+  RotaParada,
   TopCustomer,
   UpdateClienteBody,
   UpdateConfiguracoesBody,
   UpdateParcelaBody,
   UpdateProdutoBody,
+  UpdateRotaBody,
+  UpdateRotaParadaBody,
   UpdateVendaBody,
   Venda,
   VendaDetail,
@@ -1076,6 +1084,839 @@ export const useDeleteVenda = <
 > => {
   return useMutation(getDeleteVendaMutationOptions(options));
 };
+
+/**
+ * @summary List all travel routes
+ */
+export const getListRotasUrl = () => {
+  return `/api/rotas`;
+};
+
+export const listRotas = async (options?: RequestInit): Promise<Rota[]> => {
+  return customFetch<Rota[]>(getListRotasUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListRotasQueryKey = () => {
+  return [`/api/rotas`] as const;
+};
+
+export const getListRotasQueryOptions = <
+  TData = Awaited<ReturnType<typeof listRotas>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listRotas>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListRotasQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listRotas>>> = ({
+    signal,
+  }) => listRotas({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listRotas>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListRotasQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listRotas>>
+>;
+export type ListRotasQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all travel routes
+ */
+
+export function useListRotas<
+  TData = Awaited<ReturnType<typeof listRotas>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listRotas>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListRotasQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new travel route
+ */
+export const getCreateRotaUrl = () => {
+  return `/api/rotas`;
+};
+
+export const createRota = async (
+  createRotaBody: CreateRotaBody,
+  options?: RequestInit,
+): Promise<Rota> => {
+  return customFetch<Rota>(getCreateRotaUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createRotaBody),
+  });
+};
+
+export const getCreateRotaMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createRota>>,
+    TError,
+    { data: BodyType<CreateRotaBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createRota>>,
+  TError,
+  { data: BodyType<CreateRotaBody> },
+  TContext
+> => {
+  const mutationKey = ["createRota"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createRota>>,
+    { data: BodyType<CreateRotaBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createRota(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateRotaMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createRota>>
+>;
+export type CreateRotaMutationBody = BodyType<CreateRotaBody>;
+export type CreateRotaMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a new travel route
+ */
+export const useCreateRota = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createRota>>,
+    TError,
+    { data: BodyType<CreateRotaBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createRota>>,
+  TError,
+  { data: BodyType<CreateRotaBody> },
+  TContext
+> => {
+  return useMutation(getCreateRotaMutationOptions(options));
+};
+
+/**
+ * @summary Get a single route with its stops
+ */
+export const getGetRotaUrl = (id: number) => {
+  return `/api/rotas/${id}`;
+};
+
+export const getRota = async (
+  id: number,
+  options?: RequestInit,
+): Promise<RotaComParadas> => {
+  return customFetch<RotaComParadas>(getGetRotaUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetRotaQueryKey = (id: number) => {
+  return [`/api/rotas/${id}`] as const;
+};
+
+export const getGetRotaQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRota>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getRota>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetRotaQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getRota>>> = ({
+    signal,
+  }) => getRota(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getRota>>, TError, TData> & {
+    queryKey: QueryKey;
+  };
+};
+
+export type GetRotaQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRota>>
+>;
+export type GetRotaQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a single route with its stops
+ */
+
+export function useGetRota<
+  TData = Awaited<ReturnType<typeof getRota>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getRota>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetRotaQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update a route
+ */
+export const getUpdateRotaUrl = (id: number) => {
+  return `/api/rotas/${id}`;
+};
+
+export const updateRota = async (
+  id: number,
+  updateRotaBody: UpdateRotaBody,
+  options?: RequestInit,
+): Promise<Rota> => {
+  return customFetch<Rota>(getUpdateRotaUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateRotaBody),
+  });
+};
+
+export const getUpdateRotaMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateRota>>,
+    TError,
+    { id: number; data: BodyType<UpdateRotaBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateRota>>,
+  TError,
+  { id: number; data: BodyType<UpdateRotaBody> },
+  TContext
+> => {
+  const mutationKey = ["updateRota"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateRota>>,
+    { id: number; data: BodyType<UpdateRotaBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateRota(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateRotaMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateRota>>
+>;
+export type UpdateRotaMutationBody = BodyType<UpdateRotaBody>;
+export type UpdateRotaMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a route
+ */
+export const useUpdateRota = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateRota>>,
+    TError,
+    { id: number; data: BodyType<UpdateRotaBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateRota>>,
+  TError,
+  { id: number; data: BodyType<UpdateRotaBody> },
+  TContext
+> => {
+  return useMutation(getUpdateRotaMutationOptions(options));
+};
+
+/**
+ * @summary Delete a route
+ */
+export const getDeleteRotaUrl = (id: number) => {
+  return `/api/rotas/${id}`;
+};
+
+export const deleteRota = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteRotaUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteRotaMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteRota>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteRota>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteRota"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteRota>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteRota(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteRotaMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteRota>>
+>;
+
+export type DeleteRotaMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a route
+ */
+export const useDeleteRota = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteRota>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteRota>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteRotaMutationOptions(options));
+};
+
+/**
+ * @summary List stops for a route
+ */
+export const getListRotaParadasUrl = (id: number) => {
+  return `/api/rotas/${id}/paradas`;
+};
+
+export const listRotaParadas = async (
+  id: number,
+  options?: RequestInit,
+): Promise<RotaParada[]> => {
+  return customFetch<RotaParada[]>(getListRotaParadasUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListRotaParadasQueryKey = (id: number) => {
+  return [`/api/rotas/${id}/paradas`] as const;
+};
+
+export const getListRotaParadasQueryOptions = <
+  TData = Awaited<ReturnType<typeof listRotaParadas>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listRotaParadas>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListRotaParadasQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listRotaParadas>>> = ({
+    signal,
+  }) => listRotaParadas(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listRotaParadas>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListRotaParadasQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listRotaParadas>>
+>;
+export type ListRotaParadasQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List stops for a route
+ */
+
+export function useListRotaParadas<
+  TData = Awaited<ReturnType<typeof listRotaParadas>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listRotaParadas>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListRotaParadasQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a stop to a route
+ */
+export const getCreateRotaParadaUrl = (id: number) => {
+  return `/api/rotas/${id}/paradas`;
+};
+
+export const createRotaParada = async (
+  id: number,
+  createRotaParadaBody: CreateRotaParadaBody,
+  options?: RequestInit,
+): Promise<RotaParada> => {
+  return customFetch<RotaParada>(getCreateRotaParadaUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createRotaParadaBody),
+  });
+};
+
+export const getCreateRotaParadaMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createRotaParada>>,
+    TError,
+    { id: number; data: BodyType<CreateRotaParadaBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createRotaParada>>,
+  TError,
+  { id: number; data: BodyType<CreateRotaParadaBody> },
+  TContext
+> => {
+  const mutationKey = ["createRotaParada"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createRotaParada>>,
+    { id: number; data: BodyType<CreateRotaParadaBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createRotaParada(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateRotaParadaMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createRotaParada>>
+>;
+export type CreateRotaParadaMutationBody = BodyType<CreateRotaParadaBody>;
+export type CreateRotaParadaMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add a stop to a route
+ */
+export const useCreateRotaParada = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createRotaParada>>,
+    TError,
+    { id: number; data: BodyType<CreateRotaParadaBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createRotaParada>>,
+  TError,
+  { id: number; data: BodyType<CreateRotaParadaBody> },
+  TContext
+> => {
+  return useMutation(getCreateRotaParadaMutationOptions(options));
+};
+
+/**
+ * @summary Update a route stop
+ */
+export const getUpdateRotaParadaUrl = (id: number, paradaId: number) => {
+  return `/api/rotas/${id}/paradas/${paradaId}`;
+};
+
+export const updateRotaParada = async (
+  id: number,
+  paradaId: number,
+  updateRotaParadaBody: UpdateRotaParadaBody,
+  options?: RequestInit,
+): Promise<RotaParada> => {
+  return customFetch<RotaParada>(getUpdateRotaParadaUrl(id, paradaId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateRotaParadaBody),
+  });
+};
+
+export const getUpdateRotaParadaMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateRotaParada>>,
+    TError,
+    { id: number; paradaId: number; data: BodyType<UpdateRotaParadaBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateRotaParada>>,
+  TError,
+  { id: number; paradaId: number; data: BodyType<UpdateRotaParadaBody> },
+  TContext
+> => {
+  const mutationKey = ["updateRotaParada"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateRotaParada>>,
+    { id: number; paradaId: number; data: BodyType<UpdateRotaParadaBody> }
+  > = (props) => {
+    const { id, paradaId, data } = props ?? {};
+
+    return updateRotaParada(id, paradaId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateRotaParadaMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateRotaParada>>
+>;
+export type UpdateRotaParadaMutationBody = BodyType<UpdateRotaParadaBody>;
+export type UpdateRotaParadaMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a route stop
+ */
+export const useUpdateRotaParada = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateRotaParada>>,
+    TError,
+    { id: number; paradaId: number; data: BodyType<UpdateRotaParadaBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateRotaParada>>,
+  TError,
+  { id: number; paradaId: number; data: BodyType<UpdateRotaParadaBody> },
+  TContext
+> => {
+  return useMutation(getUpdateRotaParadaMutationOptions(options));
+};
+
+/**
+ * @summary Delete a route stop
+ */
+export const getDeleteRotaParadaUrl = (id: number, paradaId: number) => {
+  return `/api/rotas/${id}/paradas/${paradaId}`;
+};
+
+export const deleteRotaParada = async (
+  id: number,
+  paradaId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteRotaParadaUrl(id, paradaId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteRotaParadaMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteRotaParada>>,
+    TError,
+    { id: number; paradaId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteRotaParada>>,
+  TError,
+  { id: number; paradaId: number },
+  TContext
+> => {
+  const mutationKey = ["deleteRotaParada"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteRotaParada>>,
+    { id: number; paradaId: number }
+  > = (props) => {
+    const { id, paradaId } = props ?? {};
+
+    return deleteRotaParada(id, paradaId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteRotaParadaMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteRotaParada>>
+>;
+
+export type DeleteRotaParadaMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a route stop
+ */
+export const useDeleteRotaParada = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteRotaParada>>,
+    TError,
+    { id: number; paradaId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteRotaParada>>,
+  TError,
+  { id: number; paradaId: number },
+  TContext
+> => {
+  return useMutation(getDeleteRotaParadaMutationOptions(options));
+};
+
+/**
+ * @summary Get clients grouped by route stop
+ */
+export const getGetRotaClientesUrl = (id: number) => {
+  return `/api/rotas/${id}/clientes`;
+};
+
+export const getRotaClientes = async (
+  id: number,
+  options?: RequestInit,
+): Promise<RotaClientesResponse> => {
+  return customFetch<RotaClientesResponse>(getGetRotaClientesUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetRotaClientesQueryKey = (id: number) => {
+  return [`/api/rotas/${id}/clientes`] as const;
+};
+
+export const getGetRotaClientesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRotaClientes>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getRotaClientes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetRotaClientesQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getRotaClientes>>> = ({
+    signal,
+  }) => getRotaClientes(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getRotaClientes>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetRotaClientesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRotaClientes>>
+>;
+export type GetRotaClientesQueryError = ErrorType<void>;
+
+/**
+ * @summary Get clients grouped by route stop
+ */
+
+export function useGetRotaClientes<
+  TData = Awaited<ReturnType<typeof getRotaClientes>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getRotaClientes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetRotaClientesQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List all customers

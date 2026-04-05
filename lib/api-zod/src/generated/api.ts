@@ -263,12 +263,258 @@ export const DeleteVendaParams = zod.object({
 });
 
 /**
+ * @summary List all travel routes
+ */
+export const ListRotasResponseItem = zod.object({
+  id: zod.number(),
+  nome: zod.string(),
+  descricao: zod.string().nullish(),
+  cor: zod.string(),
+  status: zod.enum(["planejada", "em_andamento", "concluida", "cancelada"]),
+  totalParadas: zod.number().optional(),
+  totalClientes: zod.number().optional(),
+  createdAt: zod.coerce.date(),
+});
+export const ListRotasResponse = zod.array(ListRotasResponseItem);
+
+/**
+ * @summary Create a new travel route
+ */
+export const CreateRotaBody = zod.object({
+  nome: zod.string(),
+  descricao: zod.string().optional(),
+  cor: zod.string().optional(),
+  status: zod
+    .enum(["planejada", "em_andamento", "concluida", "cancelada"])
+    .optional(),
+});
+
+/**
+ * @summary Get a single route with its stops
+ */
+export const GetRotaParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetRotaResponse = zod.object({
+  rota: zod.object({
+    id: zod.number(),
+    nome: zod.string(),
+    descricao: zod.string().nullish(),
+    cor: zod.string(),
+    status: zod.enum(["planejada", "em_andamento", "concluida", "cancelada"]),
+    totalParadas: zod.number().optional(),
+    totalClientes: zod.number().optional(),
+    createdAt: zod.coerce.date(),
+  }),
+  paradas: zod.array(
+    zod.object({
+      id: zod.number(),
+      rotaId: zod.number(),
+      ordem: zod.number(),
+      nome: zod.string(),
+      estado: zod.string().nullish(),
+      enderecoCompleto: zod.string().nullish(),
+      lat: zod.number().nullish(),
+      lng: zod.number().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Update a route
+ */
+export const UpdateRotaParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateRotaBody = zod.object({
+  nome: zod.string().optional(),
+  descricao: zod.string().optional(),
+  cor: zod.string().optional(),
+  status: zod
+    .enum(["planejada", "em_andamento", "concluida", "cancelada"])
+    .optional(),
+});
+
+export const UpdateRotaResponse = zod.object({
+  id: zod.number(),
+  nome: zod.string(),
+  descricao: zod.string().nullish(),
+  cor: zod.string(),
+  status: zod.enum(["planejada", "em_andamento", "concluida", "cancelada"]),
+  totalParadas: zod.number().optional(),
+  totalClientes: zod.number().optional(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a route
+ */
+export const DeleteRotaParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary List stops for a route
+ */
+export const ListRotaParadasParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListRotaParadasResponseItem = zod.object({
+  id: zod.number(),
+  rotaId: zod.number(),
+  ordem: zod.number(),
+  nome: zod.string(),
+  estado: zod.string().nullish(),
+  enderecoCompleto: zod.string().nullish(),
+  lat: zod.number().nullish(),
+  lng: zod.number().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListRotaParadasResponse = zod.array(ListRotaParadasResponseItem);
+
+/**
+ * @summary Add a stop to a route
+ */
+export const CreateRotaParadaParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CreateRotaParadaBody = zod.object({
+  nome: zod.string(),
+  estado: zod.string().optional(),
+  enderecoCompleto: zod.string().optional(),
+  lat: zod.number().optional(),
+  lng: zod.number().optional(),
+  ordem: zod.number().optional(),
+});
+
+/**
+ * @summary Update a route stop
+ */
+export const UpdateRotaParadaParams = zod.object({
+  id: zod.coerce.number(),
+  paradaId: zod.coerce.number(),
+});
+
+export const UpdateRotaParadaBody = zod.object({
+  nome: zod.string().optional(),
+  estado: zod.string().optional(),
+  enderecoCompleto: zod.string().optional(),
+  lat: zod.number().optional(),
+  lng: zod.number().optional(),
+  ordem: zod.number().optional(),
+});
+
+export const UpdateRotaParadaResponse = zod.object({
+  id: zod.number(),
+  rotaId: zod.number(),
+  ordem: zod.number(),
+  nome: zod.string(),
+  estado: zod.string().nullish(),
+  enderecoCompleto: zod.string().nullish(),
+  lat: zod.number().nullish(),
+  lng: zod.number().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a route stop
+ */
+export const DeleteRotaParadaParams = zod.object({
+  id: zod.coerce.number(),
+  paradaId: zod.coerce.number(),
+});
+
+/**
+ * @summary Get clients grouped by route stop
+ */
+export const GetRotaClientesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetRotaClientesResponse = zod.object({
+  rota: zod.object({
+    id: zod.number(),
+    nome: zod.string(),
+    descricao: zod.string().nullish(),
+    cor: zod.string(),
+    status: zod.enum(["planejada", "em_andamento", "concluida", "cancelada"]),
+    totalParadas: zod.number().optional(),
+    totalClientes: zod.number().optional(),
+    createdAt: zod.coerce.date(),
+  }),
+  paradas: zod.array(
+    zod.object({
+      parada: zod.object({
+        id: zod.number(),
+        rotaId: zod.number(),
+        ordem: zod.number(),
+        nome: zod.string(),
+        estado: zod.string().nullish(),
+        enderecoCompleto: zod.string().nullish(),
+        lat: zod.number().nullish(),
+        lng: zod.number().nullish(),
+        createdAt: zod.coerce.date(),
+      }),
+      clientes: zod.array(
+        zod.object({
+          id: zod.number(),
+          nome: zod.string(),
+          telefone: zod.string(),
+          email: zod.string().nullish(),
+          cpf: zod.string().nullish(),
+          endereco: zod.string().nullish(),
+          bairro: zod.string().nullish(),
+          cidade: zod.string().nullish(),
+          estado: zod.string().nullish(),
+          referencia: zod.string().nullish(),
+          observacoes: zod.string().nullish(),
+          status: zod.enum(["ativo", "inativo"]),
+          totalCompras: zod.number(),
+          tagLocalizacao: zod.string().nullish(),
+          rotaParadaId: zod.number().nullish(),
+          createdAt: zod.coerce.date(),
+        }),
+      ),
+    }),
+  ),
+  semParada: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        nome: zod.string(),
+        telefone: zod.string(),
+        email: zod.string().nullish(),
+        cpf: zod.string().nullish(),
+        endereco: zod.string().nullish(),
+        bairro: zod.string().nullish(),
+        cidade: zod.string().nullish(),
+        estado: zod.string().nullish(),
+        referencia: zod.string().nullish(),
+        observacoes: zod.string().nullish(),
+        status: zod.enum(["ativo", "inativo"]),
+        totalCompras: zod.number(),
+        tagLocalizacao: zod.string().nullish(),
+        rotaParadaId: zod.number().nullish(),
+        createdAt: zod.coerce.date(),
+      }),
+    )
+    .optional(),
+});
+
+/**
  * @summary List all customers
  */
 export const ListClientesQueryParams = zod.object({
   search: zod.coerce.string().optional(),
   status: zod.enum(["ativo", "inativo"]).optional(),
   cidade: zod.coerce.string().optional(),
+  tagLocalizacao: zod.coerce.string().optional(),
+  rotaParadaId: zod.coerce.number().optional(),
 });
 
 export const ListClientesResponseItem = zod.object({
@@ -285,6 +531,8 @@ export const ListClientesResponseItem = zod.object({
   observacoes: zod.string().nullish(),
   status: zod.enum(["ativo", "inativo"]),
   totalCompras: zod.number(),
+  tagLocalizacao: zod.string().nullish(),
+  rotaParadaId: zod.number().nullish(),
   createdAt: zod.coerce.date(),
 });
 export const ListClientesResponse = zod.array(ListClientesResponseItem);
@@ -304,6 +552,8 @@ export const CreateClienteBody = zod.object({
   referencia: zod.string().optional(),
   observacoes: zod.string().optional(),
   status: zod.enum(["ativo", "inativo"]).optional(),
+  tagLocalizacao: zod.string().optional(),
+  rotaParadaId: zod.number().optional(),
 });
 
 /**
@@ -327,6 +577,8 @@ export const GetClienteResponse = zod.object({
   observacoes: zod.string().nullish(),
   status: zod.enum(["ativo", "inativo"]),
   totalCompras: zod.number(),
+  tagLocalizacao: zod.string().nullish(),
+  rotaParadaId: zod.number().nullish(),
   createdAt: zod.coerce.date(),
 });
 
@@ -349,6 +601,8 @@ export const UpdateClienteBody = zod.object({
   referencia: zod.string().optional(),
   observacoes: zod.string().optional(),
   status: zod.enum(["ativo", "inativo"]).optional(),
+  tagLocalizacao: zod.string().optional(),
+  rotaParadaId: zod.number().optional(),
 });
 
 export const UpdateClienteResponse = zod.object({
@@ -365,6 +619,8 @@ export const UpdateClienteResponse = zod.object({
   observacoes: zod.string().nullish(),
   status: zod.enum(["ativo", "inativo"]),
   totalCompras: zod.number(),
+  tagLocalizacao: zod.string().nullish(),
+  rotaParadaId: zod.number().nullish(),
   createdAt: zod.coerce.date(),
 });
 
@@ -397,6 +653,8 @@ export const GetClienteHistoryResponse = zod.object({
     observacoes: zod.string().nullish(),
     status: zod.enum(["ativo", "inativo"]),
     totalCompras: zod.number(),
+    tagLocalizacao: zod.string().nullish(),
+    rotaParadaId: zod.number().nullish(),
     createdAt: zod.coerce.date(),
   }),
   vendas: zod.array(

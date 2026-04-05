@@ -221,6 +221,10 @@ export interface Cliente {
   observacoes?: string | null;
   status: ClienteStatus;
   totalCompras: number;
+  /** @nullable */
+  tagLocalizacao?: string | null;
+  /** @nullable */
+  rotaParadaId?: number | null;
   createdAt: string;
 }
 
@@ -244,6 +248,8 @@ export interface CreateClienteBody {
   referencia?: string;
   observacoes?: string;
   status?: CreateClienteBodyStatus;
+  tagLocalizacao?: string;
+  rotaParadaId?: number;
 }
 
 export type UpdateClienteBodyStatus =
@@ -266,6 +272,8 @@ export interface UpdateClienteBody {
   referencia?: string;
   observacoes?: string;
   status?: UpdateClienteBodyStatus;
+  tagLocalizacao?: string;
+  rotaParadaId?: number;
 }
 
 export interface ClienteHistory {
@@ -417,6 +425,111 @@ export interface CatalogoPublicoResponse {
   produtos: CatalogoPublicoProduto[];
 }
 
+export type RotaStatus = (typeof RotaStatus)[keyof typeof RotaStatus];
+
+export const RotaStatus = {
+  planejada: "planejada",
+  em_andamento: "em_andamento",
+  concluida: "concluida",
+  cancelada: "cancelada",
+} as const;
+
+export interface Rota {
+  id: number;
+  nome: string;
+  /** @nullable */
+  descricao?: string | null;
+  cor: string;
+  status: RotaStatus;
+  totalParadas?: number;
+  totalClientes?: number;
+  createdAt: string;
+}
+
+export type CreateRotaBodyStatus =
+  (typeof CreateRotaBodyStatus)[keyof typeof CreateRotaBodyStatus];
+
+export const CreateRotaBodyStatus = {
+  planejada: "planejada",
+  em_andamento: "em_andamento",
+  concluida: "concluida",
+  cancelada: "cancelada",
+} as const;
+
+export interface CreateRotaBody {
+  nome: string;
+  descricao?: string;
+  cor?: string;
+  status?: CreateRotaBodyStatus;
+}
+
+export type UpdateRotaBodyStatus =
+  (typeof UpdateRotaBodyStatus)[keyof typeof UpdateRotaBodyStatus];
+
+export const UpdateRotaBodyStatus = {
+  planejada: "planejada",
+  em_andamento: "em_andamento",
+  concluida: "concluida",
+  cancelada: "cancelada",
+} as const;
+
+export interface UpdateRotaBody {
+  nome?: string;
+  descricao?: string;
+  cor?: string;
+  status?: UpdateRotaBodyStatus;
+}
+
+export interface RotaParada {
+  id: number;
+  rotaId: number;
+  ordem: number;
+  nome: string;
+  /** @nullable */
+  estado?: string | null;
+  /** @nullable */
+  enderecoCompleto?: string | null;
+  /** @nullable */
+  lat?: number | null;
+  /** @nullable */
+  lng?: number | null;
+  createdAt: string;
+}
+
+export interface CreateRotaParadaBody {
+  nome: string;
+  estado?: string;
+  enderecoCompleto?: string;
+  lat?: number;
+  lng?: number;
+  ordem?: number;
+}
+
+export interface UpdateRotaParadaBody {
+  nome?: string;
+  estado?: string;
+  enderecoCompleto?: string;
+  lat?: number;
+  lng?: number;
+  ordem?: number;
+}
+
+export interface RotaComParadas {
+  rota: Rota;
+  paradas: RotaParada[];
+}
+
+export interface RotaClientesParada {
+  parada: RotaParada;
+  clientes: Cliente[];
+}
+
+export interface RotaClientesResponse {
+  rota: Rota;
+  paradas: RotaClientesParada[];
+  semParada?: Cliente[];
+}
+
 export type GetCatalogoPublico404 = {
   error?: string;
 };
@@ -448,6 +561,8 @@ export type ListClientesParams = {
   search?: string;
   status?: ListClientesStatus;
   cidade?: string;
+  tagLocalizacao?: string;
+  rotaParadaId?: number;
 };
 
 export type ListClientesStatus =

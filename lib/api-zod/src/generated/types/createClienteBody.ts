@@ -19,4 +19,6 @@ export interface CreateClienteBody {
   referencia?: string;
   observacoes?: string;
   status?: CreateClienteBodyStatus;
+  tagLocalizacao?: string;
+  rotaParadaId?: number;
 }

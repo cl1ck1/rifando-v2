@@ -29,5 +29,9 @@ export interface Cliente {
   observacoes?: string | null;
   status: ClienteStatus;
   totalCompras: number;
+  /** @nullable */
+  tagLocalizacao?: string | null;
+  /** @nullable */
+  rotaParadaId?: number | null;
   createdAt: Date;
 }

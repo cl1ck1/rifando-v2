@@ -6,3 +6,5 @@ export * from "./produtos";
 export * from "./categorias";
 export * from "./configuracoes";
 export * from "./atividades";
+export * from "./rotas";
+export * from "./rotaParadas";

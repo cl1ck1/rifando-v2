@@ -1,4 +1,4 @@
-import { pgTable, serial, text, numeric, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, numeric, timestamp } from "drizzle-orm/pg-core";
 
 export const clientesTable = pgTable("clientes", {
   id: serial("id").primaryKey(),
@@ -15,6 +15,8 @@ export const clientesTable = pgTable("clientes", {
   observacoes: text("observacoes"),
   status: text("status").notNull().default("ativo"),
   totalCompras: numeric("total_compras", { precision: 12, scale: 2 }).notNull().default("0"),
+  tagLocalizacao: text("tag_localizacao"),
+  rotaParadaId: integer("rota_parada_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

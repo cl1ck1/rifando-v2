@@ -9,7 +9,8 @@ import {
   Package,
   Settings,
   LogOut,
-  X
+  X,
+  MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const navItems = [
   { name: "Painel", href: "/painel", icon: LayoutDashboard },
   { name: "Vendas", href: "/vendas", icon: ShoppingBag },
+  { name: "Rotas", href: "/rotas", icon: MapPin },
   { name: "Clientes", href: "/clientes", icon: Users },
   { name: "Parcelas", href: "/parcelas", icon: CalendarCheck },
   { name: "Produtos", href: "/catalogo", icon: Package },
