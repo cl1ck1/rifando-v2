@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   useGetConfiguracoes,
   useUpdateConfiguracoes,
@@ -56,6 +56,10 @@ export default function Personalizacao() {
   const createBanner = useCreateLojaBanner();
   const updateBanner = useUpdateLojaBanner();
   const deleteBanner = useDeleteLojaBanner();
+
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const dragBannerId = useRef<number | null>(null);
 
   const [aparenciaForm, setAparenciaForm] = useState({
     logoUrl: "",
@@ -134,10 +138,32 @@ export default function Personalizacao() {
     });
   };
 
-  const handleBannerOrdem = (id: number, direction: "up" | "down", currentOrdem: number) => {
-    const newOrdem = direction === "up" ? currentOrdem - 1 : currentOrdem + 1;
-    updateBanner.mutate({ id, data: { ordem: newOrdem } }, {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: getListLojaBannersQueryKey() }),
+  const handleBannerOrdem = (id: number, direction: "up" | "down", idx: number) => {
+    if (!banners) return;
+    const sorted = [...banners].sort((a, b) => a.ordem - b.ordem);
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= sorted.length) return;
+    const target = sorted[swapIdx];
+    updateBanner.mutate({ id, data: { ordem: target.ordem } }, {
+      onSuccess: () => {
+        updateBanner.mutate({ id: target.id, data: { ordem: sorted[idx].ordem } }, {
+          onSuccess: () => queryClient.invalidateQueries({ queryKey: getListLojaBannersQueryKey() }),
+        });
+      },
+    });
+  };
+
+  const handleBannerDrop = (fromIdx: number, toIdx: number) => {
+    if (!banners || fromIdx === toIdx) return;
+    const sorted = [...banners].sort((a, b) => a.ordem - b.ordem);
+    const from = sorted[fromIdx];
+    const to = sorted[toIdx];
+    updateBanner.mutate({ id: from.id, data: { ordem: to.ordem } }, {
+      onSuccess: () => {
+        updateBanner.mutate({ id: to.id, data: { ordem: from.ordem } }, {
+          onSuccess: () => queryClient.invalidateQueries({ queryKey: getListLojaBannersQueryKey() }),
+        });
+      },
     });
   };
 
@@ -359,14 +385,43 @@ export default function Personalizacao() {
                   {banners && banners.length > 0 ? (
                     <div className="space-y-3">
                       {[...banners].sort((a, b) => a.ordem - b.ordem).map((banner, idx) => (
-                        <div key={banner.id} className="flex items-start gap-3 p-3 rounded-lg border bg-card">
-                          <div className="flex flex-col gap-1 shrink-0">
+                        <div
+                          key={banner.id}
+                          draggable
+                          onDragStart={() => {
+                            setDragIdx(idx);
+                            dragBannerId.current = banner.id;
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            setDragOverIdx(idx);
+                          }}
+                          onDragLeave={() => setDragOverIdx(null)}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            if (dragIdx !== null) handleBannerDrop(dragIdx, idx);
+                            setDragIdx(null);
+                            setDragOverIdx(null);
+                            dragBannerId.current = null;
+                          }}
+                          onDragEnd={() => {
+                            setDragIdx(null);
+                            setDragOverIdx(null);
+                            dragBannerId.current = null;
+                          }}
+                          className={[
+                            "flex items-start gap-3 p-3 rounded-lg border bg-card transition-opacity select-none",
+                            dragIdx === idx ? "opacity-40" : "",
+                            dragOverIdx === idx && dragIdx !== idx ? "ring-2 ring-primary ring-offset-1" : "",
+                          ].join(" ")}
+                        >
+                          <div className="flex flex-col gap-1 shrink-0 cursor-grab active:cursor-grabbing">
                             <Button
                               size="icon"
                               variant="ghost"
                               className="h-6 w-6"
                               disabled={idx === 0}
-                              onClick={() => handleBannerOrdem(banner.id, "up", banner.ordem)}
+                              onClick={() => handleBannerOrdem(banner.id, "up", idx)}
                             >
                               <ArrowUp className="w-3 h-3" />
                             </Button>
@@ -376,14 +431,14 @@ export default function Personalizacao() {
                               variant="ghost"
                               className="h-6 w-6"
                               disabled={idx === (banners?.length ?? 1) - 1}
-                              onClick={() => handleBannerOrdem(banner.id, "down", banner.ordem)}
+                              onClick={() => handleBannerOrdem(banner.id, "down", idx)}
                             >
                               <ArrowDown className="w-3 h-3" />
                             </Button>
                           </div>
 
                           <div className="w-24 h-16 rounded-md overflow-hidden border bg-muted shrink-0">
-                            <img src={banner.imageUrl} alt="" className="w-full h-full object-cover" />
+                            <img src={banner.imageUrl} alt="" className="w-full h-full object-cover" draggable={false} />
                           </div>
 
                           <div className="flex-1 min-w-0 space-y-1.5">
