@@ -171,12 +171,14 @@ async function seedDatabase(userId: string): Promise<void> {
   console.log(`Clientes OK: ${insertedClientes.length}`);
 
   // ── Vendas + Itens + Parcelas ──
+  // Venda status domain: pendente | parcial | quitada | cancelada
+  // Parcela status domain: pendente | paga | atrasada | cancelada
   const vendaDefs = [
-    { ci: 0, itens: [{ pi: 0, q: 2 }, { pi: 5, q: 1 }],  desc: "5.00",  forma: "parcelado", np: 3, status: "pendente", pagos: 1 },
-    { ci: 1, itens: [{ pi: 3, q: 1 }],                   desc: "0.00",  forma: "avista",    np: 1, status: "pago",     pagos: 1 },
-    { ci: 2, itens: [{ pi: 7, q: 1 }, { pi: 8, q: 2 }],  desc: "0.00",  forma: "parcelado", np: 2, status: "pago",     pagos: 2 },
+    { ci: 0, itens: [{ pi: 0, q: 2 }, { pi: 5, q: 1 }],  desc: "5.00",  forma: "parcelado", np: 3, status: "parcial",  pagos: 1 },
+    { ci: 1, itens: [{ pi: 3, q: 1 }],                   desc: "0.00",  forma: "avista",    np: 1, status: "quitada",  pagos: 1 },
+    { ci: 2, itens: [{ pi: 7, q: 1 }, { pi: 8, q: 2 }],  desc: "0.00",  forma: "parcelado", np: 2, status: "quitada",  pagos: 2 },
     { ci: 3, itens: [{ pi: 1, q: 1 }, { pi: 6, q: 1 }],  desc: "10.00", forma: "parcelado", np: 4, status: "pendente", pagos: 0 },
-    { ci: 4, itens: [{ pi: 2, q: 1 }, { pi: 9, q: 2 }],  desc: "0.00",  forma: "parcelado", np: 3, status: "pendente", pagos: 1 },
+    { ci: 4, itens: [{ pi: 2, q: 1 }, { pi: 9, q: 2 }],  desc: "0.00",  forma: "parcelado", np: 3, status: "parcial",  pagos: 1 },
   ];
 
   for (const vd of vendaDefs) {
@@ -235,11 +237,30 @@ async function seedDatabase(userId: string): Promise<void> {
         dataVencimento: dueStr,
         dataPagamento: isPaid ? dueStr : null,
         metodoPagamento: isPaid ? "pix" : null,
-        status: isPaid ? "pago" : "pendente",
+        status: isPaid ? "paga" : "pendente",
       });
     }
   }
   console.log("Vendas + itens + parcelas OK");
+
+  // ── Update clientes.totalCompras with real purchase totals ──
+  // Map client index to venda total (only for clients with sales: ci 0-4)
+  const clienteTotais: Record<number, number> = {};
+  for (const vd of vendaDefs) {
+    let total = 0;
+    for (const it of vd.itens) total += parseFloat(insertedProds[it.pi].precoVenda ?? "0") * it.q;
+    const valorFinal = (total - parseFloat(vd.desc));
+    clienteTotais[vd.ci] = (clienteTotais[vd.ci] ?? 0) + valorFinal;
+  }
+  for (const [ciStr, totalCompras] of Object.entries(clienteTotais)) {
+    const ci = parseInt(ciStr);
+    const cliente = insertedClientes[ci];
+    await db
+      .update(clientesTable)
+      .set({ totalCompras: totalCompras.toFixed(2) })
+      .where(eq(clientesTable.id, cliente.id));
+  }
+  console.log("Clientes totalCompras updated.");
 
   // ── Rotas + Paradas ──
   const [rota1] = await db
