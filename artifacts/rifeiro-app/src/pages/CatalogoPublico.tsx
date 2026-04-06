@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, ShoppingBag, MapPin, MessageCircle, Store, ArrowLeft, Package, ChevronLeft, ChevronRight } from "lucide-react";
-import useEmblaCarousel from "embla-carousel-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -148,71 +147,80 @@ function LoadingSkeleton() {
 }
 
 function BannerCarousel({ banners, corPrincipal }: { banners: Banner[]; corPrincipal: string | null }) {
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const primaryColor = corPrincipal || "#2563eb";
 
-  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
-  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
-
-  useEffect(() => {
-    if (!emblaApi) return;
-    const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
-    emblaApi.on("select", onSelect);
-    return () => { emblaApi.off("select", onSelect); };
-  }, [emblaApi]);
+  const goTo = (index: number) => setCurrentIndex(((index % banners.length) + banners.length) % banners.length);
+  const goPrev = () => goTo(currentIndex - 1);
+  const goNext = () => goTo(currentIndex + 1);
 
   useEffect(() => {
-    if (!emblaApi || banners.length <= 1) return;
-    const interval = setInterval(() => emblaApi.scrollNext(), 4000);
-    return () => clearInterval(interval);
-  }, [emblaApi, banners.length]);
+    if (banners.length <= 1) return;
+    const timer = setInterval(goNext, 4500);
+    return () => clearInterval(timer);
+  }, [banners.length, currentIndex]);
 
   if (banners.length === 0) return null;
 
-  const primaryColor = corPrincipal || "#2563eb";
+  const current = banners[currentIndex];
 
   return (
-    <div className="relative overflow-hidden">
-      <div ref={emblaRef} className="overflow-hidden">
-        <div className="flex">
-          {banners.map((banner) => (
-            <div key={banner.id} className="relative flex-[0_0_100%] min-w-0">
-              {banner.linkUrl ? (
-                <a href={banner.linkUrl} target="_blank" rel="noopener noreferrer" className="block">
-                  <img
-                    src={banner.imageUrl}
-                    alt={banner.titulo || "Banner"}
-                    className="w-full h-48 md:h-72 object-cover"
-                  />
-                </a>
-              ) : (
-                <img
-                  src={banner.imageUrl}
-                  alt={banner.titulo || "Banner"}
-                  className="w-full h-48 md:h-72 object-cover"
-                />
-              )}
+    <div className="relative overflow-hidden bg-black">
+      <div
+        className="flex transition-transform duration-500 ease-in-out"
+        style={{ transform: `translateX(-${currentIndex * 100}%)`, width: `${banners.length * 100}%` }}
+      >
+        {banners.map((banner) => {
+          const content = (
+            <div className="relative" style={{ width: `${100 / banners.length}%`, flexShrink: 0 }}>
+              <img
+                src={banner.imageUrl}
+                alt={banner.titulo || "Banner"}
+                className="w-full h-52 md:h-80 object-cover"
+              />
               {banner.titulo && (
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                  <p className="text-white font-semibold text-sm md:text-base">{banner.titulo}</p>
+                  <p className="text-white font-semibold text-sm md:text-base drop-shadow">{banner.titulo}</p>
                 </div>
               )}
             </div>
-          ))}
-        </div>
+          );
+
+          return banner.linkUrl ? (
+            <a key={banner.id} href={banner.linkUrl} target="_blank" rel="noopener noreferrer" className="block" style={{ width: `${100 / banners.length}%`, flexShrink: 0 }}>
+              <img src={banner.imageUrl} alt={banner.titulo || "Banner"} className="w-full h-52 md:h-80 object-cover" />
+              {banner.titulo && (
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                  <p className="text-white font-semibold text-sm md:text-base drop-shadow">{banner.titulo}</p>
+                </div>
+              )}
+            </a>
+          ) : (
+            <div key={banner.id} className="relative" style={{ width: `${100 / banners.length}%`, flexShrink: 0 }}>
+              <img src={banner.imageUrl} alt={banner.titulo || "Banner"} className="w-full h-52 md:h-80 object-cover" />
+              {banner.titulo && (
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                  <p className="text-white font-semibold text-sm md:text-base drop-shadow">{banner.titulo}</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {banners.length > 1 && (
         <>
           <button
-            onClick={scrollPrev}
-            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center transition-colors"
+            onClick={goPrev}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors"
+            aria-label="Anterior"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button
-            onClick={scrollNext}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center transition-colors"
+            onClick={goNext}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors"
+            aria-label="Proximo"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -220,12 +228,13 @@ function BannerCarousel({ banners, corPrincipal }: { banners: Banner[]; corPrinc
             {banners.map((_, idx) => (
               <button
                 key={idx}
-                onClick={() => emblaApi?.scrollTo(idx)}
+                onClick={() => goTo(idx)}
                 className="w-2 h-2 rounded-full transition-all duration-200"
                 style={{
-                  backgroundColor: idx === selectedIndex ? primaryColor : "rgba(255,255,255,0.6)",
-                  transform: idx === selectedIndex ? "scale(1.2)" : "scale(1)",
+                  backgroundColor: idx === currentIndex ? primaryColor : "rgba(255,255,255,0.5)",
+                  transform: idx === currentIndex ? "scale(1.25)" : "scale(1)",
                 }}
+                aria-label={`Ir para slide ${idx + 1}`}
               />
             ))}
           </div>
@@ -260,13 +269,11 @@ function ProductCard({ produto, whatsappPhone, corPrincipal }: { produto: Produt
       </div>
 
       <div className="p-3 space-y-2">
-        <h3 className="font-semibold text-sm leading-tight line-clamp-2 text-foreground">
-          {produto.nome}
-        </h3>
+        <h3 className="font-semibold text-sm leading-tight line-clamp-2 text-foreground">{produto.nome}</h3>
         {produto.descricao && (
           <p className="text-xs text-muted-foreground line-clamp-2">{produto.descricao}</p>
         )}
-        <div className="flex items-center justify-between pt-1">
+        <div className="pt-1">
           <span className="text-lg font-bold" style={{ color: primaryColor }}>
             {formatCurrency(produto.precoVenda)}
           </span>
@@ -346,26 +353,42 @@ export default function CatalogoPublico() {
 
   return (
     <div className="min-h-[100dvh] bg-background">
-      {/* Sticky header */}
-      <header className="sticky top-0 z-20 border-b backdrop-blur-sm bg-background/95">
-        <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex items-center gap-3">
+
+      {/* ── Hero section: logo + store name + banner principal ── */}
+      <header className="relative overflow-hidden">
+        {loja.bannerPrincipalUrl ? (
+          <img src={loja.bannerPrincipalUrl} alt="Banner" className="w-full h-44 md:h-64 object-cover" />
+        ) : (
+          <div
+            className="w-full h-32 md:h-48"
+            style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${hexToRgba(primaryColor, 0.7)} 100%)` }}
+          />
+        )}
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+
+        <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
+          <div className="max-w-6xl mx-auto flex items-end gap-3">
             {loja.logoUrl ? (
               <img
                 src={loja.logoUrl}
                 alt={loja.nomeNegocio}
-                className="w-10 h-10 rounded-full object-cover border-2 flex-shrink-0"
-                style={{ borderColor: hexToRgba(primaryColor, 0.3) }}
+                className="w-16 h-16 md:w-20 md:h-20 rounded-xl object-cover border-2 border-white/80 shadow-md flex-shrink-0"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, 0.1) }}>
-                <ShoppingBag className="w-5 h-5" style={{ color: primaryColor }} />
+              <div
+                className="w-16 h-16 md:w-20 md:h-20 rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-white/80 shadow-md"
+                style={{ backgroundColor: primaryColor }}
+              >
+                <ShoppingBag className="w-7 h-7 md:w-9 md:h-9 text-white" />
               </div>
             )}
-            <div className="flex-1 min-w-0">
-              <h1 className="text-base font-bold text-foreground truncate">{loja.nomeNegocio}</h1>
+            <div className="flex-1 min-w-0 pb-1">
+              <h1 className="text-xl md:text-2xl font-bold text-white drop-shadow truncate">
+                {loja.nomeNegocio}
+              </h1>
               {location && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <p className="text-white/80 text-xs flex items-center gap-1 mt-0.5">
                   <MapPin className="w-3 h-3" />
                   {location}
                 </p>
@@ -378,7 +401,7 @@ export default function CatalogoPublico() {
                 rel="noopener noreferrer"
                 className="flex-shrink-0"
               >
-                <Button size="sm" className="gap-1.5 text-white" style={{ backgroundColor: "#25D366" }}>
+                <Button size="sm" className="gap-1.5 text-white shadow-md" style={{ backgroundColor: "#25D366" }}>
                   <MessageCircle className="w-4 h-4" />
                   <span className="hidden sm:inline">Falar conosco</span>
                 </Button>
@@ -388,37 +411,26 @@ export default function CatalogoPublico() {
         </div>
       </header>
 
-      {/* Hero / Banner area */}
-      {banners.length > 0 ? (
+      {/* ── Promotional banner carousel (below hero) ── */}
+      {banners.length > 0 && (
         <BannerCarousel banners={banners} corPrincipal={loja.corPrincipal} />
-      ) : loja.bannerPrincipalUrl ? (
-        <div className="relative h-48 md:h-64 overflow-hidden">
-          <img src={loja.bannerPrincipalUrl} alt="Banner" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-        </div>
-      ) : (
-        <div className="h-3" style={{ backgroundColor: primaryColor, opacity: 0.15 }} />
       )}
 
-      {/* Welcome message */}
-      {loja.mensagemBoasVindas && (
+      {/* ── Welcome / description strip ── */}
+      {(loja.mensagemBoasVindas || loja.descricao) && (
         <div className="border-b" style={{ backgroundColor: hexToRgba(primaryColor, 0.05) }}>
-          <div className="max-w-6xl mx-auto px-4 py-3">
-            <p className="text-sm text-muted-foreground text-center italic">{loja.mensagemBoasVindas}</p>
+          <div className="max-w-6xl mx-auto px-4 py-3 space-y-1 text-center">
+            {loja.mensagemBoasVindas && (
+              <p className="text-sm font-medium text-foreground/90 italic">{loja.mensagemBoasVindas}</p>
+            )}
+            {loja.descricao && (
+              <p className="text-xs text-muted-foreground">{loja.descricao}</p>
+            )}
           </div>
         </div>
       )}
 
-      {/* Store description */}
-      {loja.descricao && (
-        <div className="border-b bg-muted/30">
-          <div className="max-w-6xl mx-auto px-4 py-3">
-            <p className="text-sm text-center text-foreground/80">{loja.descricao}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Product area */}
+      {/* ── Product area ── */}
       <div className="max-w-6xl mx-auto px-4 py-4 space-y-4">
         {/* Search */}
         <div className="relative">

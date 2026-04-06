@@ -168,6 +168,12 @@ export default function Personalizacao() {
     });
   };
 
+  const handleBannerLinkUrl = (id: number, linkUrl: string) => {
+    updateBanner.mutate({ id, data: { linkUrl: linkUrl || null } }, {
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: getListLojaBannersQueryKey() }),
+    });
+  };
+
   const catalogoUrl = config?.catalogoSlug
     ? `${window.location.origin}${BASE}/catalogo/${config.catalogoSlug}`
     : null;
@@ -380,12 +386,19 @@ export default function Personalizacao() {
                             <img src={banner.imageUrl} alt="" className="w-full h-full object-cover" />
                           </div>
 
-                          <div className="flex-1 min-w-0 space-y-2">
+                          <div className="flex-1 min-w-0 space-y-1.5">
                             <Input
                               placeholder="Titulo (opcional)"
                               defaultValue={banner.titulo || ""}
                               onBlur={(e) => handleBannerTitulo(banner.id, e.target.value)}
                               className="h-8 text-sm"
+                            />
+                            <Input
+                              placeholder="Link ao clicar (opcional, ex: https://...)"
+                              defaultValue={banner.linkUrl || ""}
+                              onBlur={(e) => handleBannerLinkUrl(banner.id, e.target.value)}
+                              className="h-8 text-sm"
+                              type="url"
                             />
                           </div>
 

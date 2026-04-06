@@ -73,7 +73,7 @@ paths:
     get:
       tags: [storage]
       operationId: getStorageObject
-      summary: Serve an uploaded object
+      summary: Serve an uploaded object (explicitly public — used for catalog images)
       parameters:
         - name: objectPath
           in: path
@@ -90,6 +90,28 @@ paths:
                 format: binary
         "404":
           description: Object not found
+
+  /storage/public-objects/{filePath}:
+    get:
+      tags: [storage]
+      operationId: getPublicObject
+      summary: Serve a public asset from PUBLIC_OBJECT_SEARCH_PATHS (no auth required)
+      parameters:
+        - name: filePath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File content streamed
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: File not found
 
   # ── Loja Banners ────────────────────────────────────
   /loja-banners:
