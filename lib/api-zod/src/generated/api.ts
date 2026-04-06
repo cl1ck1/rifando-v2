@@ -1081,17 +1081,17 @@ export const GetConfiguracoesResponse = zod.object({
 export const UpdateConfiguracoesBody = zod.object({
   nomeNegocio: zod.string().optional(),
   telefoneWhatsapp: zod.string().optional(),
-  logoUrl: zod.string().optional(),
-  bannerPrincipalUrl: zod.string().optional(),
+  logoUrl: zod.string().nullish(),
+  bannerPrincipalUrl: zod.string().nullish(),
   corPrincipal: zod.string().optional(),
   corSecundaria: zod.string().optional(),
-  descricao: zod.string().optional(),
+  descricao: zod.string().nullish(),
   catalogoSlug: zod.string().optional(),
   catalogoAtivo: zod.boolean().optional(),
   cidade: zod.string().optional(),
   estado: zod.string().optional(),
   chavePix: zod.string().optional(),
-  mensagemBoasVindas: zod.string().optional(),
+  mensagemBoasVindas: zod.string().nullish(),
 });
 
 export const UpdateConfiguracoesResponse = zod.object({

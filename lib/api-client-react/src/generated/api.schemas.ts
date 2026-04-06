@@ -446,17 +446,17 @@ export interface Configuracoes {
 export interface UpdateConfiguracoesBody {
   nomeNegocio?: string;
   telefoneWhatsapp?: string;
-  logoUrl?: string;
-  bannerPrincipalUrl?: string;
+  logoUrl?: string | null;
+  bannerPrincipalUrl?: string | null;
   corPrincipal?: string;
   corSecundaria?: string;
-  descricao?: string;
+  descricao?: string | null;
   catalogoSlug?: string;
   catalogoAtivo?: boolean;
   cidade?: string;
   estado?: string;
   chavePix?: string;
-  mensagemBoasVindas?: string;
+  mensagemBoasVindas?: string | null;
 }
 
 export interface CatalogoPublicoLoja {

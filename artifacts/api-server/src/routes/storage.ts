@@ -85,20 +85,23 @@ router.get("/storage/public-objects/*filePath", async (req: Request, res: Respon
 });
 
 /**
- * GET /storage/objects/*
+ * GET /storage/objects/uploads/*
  *
- * Serve uploaded object entities.
+ * Serve uploaded catalog assets (store logos, banner images) publicly.
  *
- * Intentionally public: all objects uploaded through this app are catalog
- * assets (store logos, banner images) that must be readable by anyone
- * visiting the public catalog page — no authentication is applied here.
- * Uploads are gated behind auth (POST /storage/uploads/request-url above).
+ * Scope is intentionally restricted to the `uploads/` sub-directory — the
+ * only path prefix written by getObjectEntityUploadURL() in this app.
+ * Anything stored under other prefixes in PRIVATE_OBJECT_DIR is not exposed
+ * by this route, preserving the ability to protect future private objects.
+ *
+ * Upload access is gated behind auth (POST /storage/uploads/request-url);
+ * read access is public because catalog visitors are unauthenticated.
  */
-router.get("/storage/objects/*path", async (req: Request, res: Response) => {
+router.get("/storage/objects/uploads/*path", async (req: Request, res: Response) => {
   try {
     const raw = req.params.path;
     const wildcardPath = Array.isArray(raw) ? raw.join("/") : raw;
-    const objectPath = `/objects/${wildcardPath}`;
+    const objectPath = `/objects/uploads/${wildcardPath}`;
     const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
 
     const response = await objectStorageService.downloadObject(objectFile);

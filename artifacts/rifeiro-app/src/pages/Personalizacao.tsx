@@ -91,12 +91,12 @@ export default function Personalizacao() {
   const handleSaveAparencia = () => {
     updateConfig.mutate({
       data: {
-        logoUrl: aparenciaForm.logoUrl || undefined,
-        bannerPrincipalUrl: aparenciaForm.bannerPrincipalUrl || undefined,
+        logoUrl: aparenciaForm.logoUrl || null,
+        bannerPrincipalUrl: aparenciaForm.bannerPrincipalUrl || null,
         corPrincipal: aparenciaForm.corPrincipal || undefined,
         corSecundaria: aparenciaForm.corSecundaria || undefined,
-        descricao: aparenciaForm.descricao || undefined,
-        mensagemBoasVindas: aparenciaForm.mensagemBoasVindas || undefined,
+        descricao: aparenciaForm.descricao || null,
+        mensagemBoasVindas: aparenciaForm.mensagemBoasVindas || null,
         nomeNegocio: aparenciaForm.nomeNegocio || undefined,
       },
     }, {
