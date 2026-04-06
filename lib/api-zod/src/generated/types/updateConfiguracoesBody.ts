@@ -10,6 +10,10 @@ export interface UpdateConfiguracoesBody {
   nomeNegocio?: string;
   telefoneWhatsapp?: string;
   logoUrl?: string;
+  bannerPrincipalUrl?: string;
+  corPrincipal?: string;
+  corSecundaria?: string;
+  descricao?: string;
   catalogoSlug?: string;
   catalogoAtivo?: boolean;
   cidade?: string;

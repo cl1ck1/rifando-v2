@@ -16,6 +16,25 @@ function normalizeSlug(slug: string): string {
     .replace(/^-|-$/g, "");
 }
 
+function mapConfig(c: typeof configuracoesTable.$inferSelect) {
+  return {
+    id: c.id,
+    nomeNegocio: c.nomeNegocio,
+    telefoneWhatsapp: c.telefoneWhatsapp,
+    logoUrl: c.logoUrl,
+    bannerPrincipalUrl: c.bannerPrincipalUrl,
+    corPrincipal: c.corPrincipal,
+    corSecundaria: c.corSecundaria,
+    descricao: c.descricao,
+    catalogoSlug: c.catalogoSlug,
+    catalogoAtivo: c.catalogoAtivo,
+    cidade: c.cidade,
+    estado: c.estado,
+    chavePix: c.chavePix,
+    mensagemBoasVindas: c.mensagemBoasVindas,
+  };
+}
+
 const router: IRouter = Router();
 
 router.get("/configuracoes", requireAuth, async (req, res): Promise<void> => {
@@ -30,19 +49,7 @@ router.get("/configuracoes", requireAuth, async (req, res): Promise<void> => {
     results = [created];
   }
 
-  const c = results[0];
-  res.json({
-    id: c.id,
-    nomeNegocio: c.nomeNegocio,
-    telefoneWhatsapp: c.telefoneWhatsapp,
-    logoUrl: c.logoUrl,
-    catalogoSlug: c.catalogoSlug,
-    catalogoAtivo: c.catalogoAtivo,
-    cidade: c.cidade,
-    estado: c.estado,
-    chavePix: c.chavePix,
-    mensagemBoasVindas: c.mensagemBoasVindas,
-  });
+  res.json(mapConfig(results[0]));
 });
 
 router.put("/configuracoes", requireAuth, async (req, res): Promise<void> => {
@@ -86,6 +93,10 @@ router.put("/configuracoes", requireAuth, async (req, res): Promise<void> => {
   if (parsed.data.nomeNegocio !== undefined) updates.nomeNegocio = parsed.data.nomeNegocio ?? null;
   if (parsed.data.telefoneWhatsapp !== undefined) updates.telefoneWhatsapp = parsed.data.telefoneWhatsapp ?? null;
   if (parsed.data.logoUrl !== undefined) updates.logoUrl = parsed.data.logoUrl ?? null;
+  if (parsed.data.bannerPrincipalUrl !== undefined) updates.bannerPrincipalUrl = parsed.data.bannerPrincipalUrl ?? null;
+  if (parsed.data.corPrincipal !== undefined) updates.corPrincipal = parsed.data.corPrincipal ?? null;
+  if (parsed.data.corSecundaria !== undefined) updates.corSecundaria = parsed.data.corSecundaria ?? null;
+  if (parsed.data.descricao !== undefined) updates.descricao = parsed.data.descricao ?? null;
   if (parsed.data.catalogoSlug !== undefined) updates.catalogoSlug = parsed.data.catalogoSlug ?? null;
   if (parsed.data.catalogoAtivo !== undefined) updates.catalogoAtivo = parsed.data.catalogoAtivo;
   if (parsed.data.cidade !== undefined) updates.cidade = parsed.data.cidade ?? null;
@@ -98,18 +109,7 @@ router.put("/configuracoes", requireAuth, async (req, res): Promise<void> => {
     .where(eq(configuracoesTable.userId, userId))
     .returning();
 
-  res.json({
-    id: updated.id,
-    nomeNegocio: updated.nomeNegocio,
-    telefoneWhatsapp: updated.telefoneWhatsapp,
-    logoUrl: updated.logoUrl,
-    catalogoSlug: updated.catalogoSlug,
-    catalogoAtivo: updated.catalogoAtivo,
-    cidade: updated.cidade,
-    estado: updated.estado,
-    chavePix: updated.chavePix,
-    mensagemBoasVindas: updated.mensagemBoasVindas,
-  });
+  res.json(mapConfig(updated));
 });
 
 export default router;

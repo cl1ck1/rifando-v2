@@ -6,12 +6,9 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export interface Categoria {
-  id: number;
-  nome: string;
-  /** @nullable */
+export interface UpdateCategoriaBody {
+  nome?: string;
   cor?: string | null;
   ordem?: number;
   exibirNoCatalogo?: boolean;
-  createdAt?: Date;
 }

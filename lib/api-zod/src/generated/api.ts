@@ -15,6 +15,84 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary Request a presigned URL for file upload
+ */
+export const RequestUploadUrlBody = zod.object({
+  name: zod.string(),
+  size: zod.number(),
+  contentType: zod.string(),
+});
+
+export const RequestUploadUrlResponse = zod.object({
+  uploadURL: zod.string(),
+  objectPath: zod.string(),
+});
+
+/**
+ * @summary Serve an uploaded object
+ */
+export const GetStorageObjectParams = zod.object({
+  objectPath: zod.coerce.string(),
+});
+
+/**
+ * @summary List all store banners
+ */
+export const ListLojaBannersResponseItem = zod.object({
+  id: zod.number(),
+  imageUrl: zod.string(),
+  titulo: zod.string().nullish(),
+  linkUrl: zod.string().nullish(),
+  ordem: zod.number(),
+  ativo: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+export const ListLojaBannersResponse = zod.array(ListLojaBannersResponseItem);
+
+/**
+ * @summary Create a store banner
+ */
+export const CreateLojaBannerBody = zod.object({
+  imageUrl: zod.string(),
+  titulo: zod.string().optional(),
+  linkUrl: zod.string().optional(),
+  ordem: zod.number().optional(),
+  ativo: zod.boolean().optional(),
+});
+
+/**
+ * @summary Update a store banner
+ */
+export const UpdateLojaBannerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateLojaBannerBody = zod.object({
+  imageUrl: zod.string().optional(),
+  titulo: zod.string().nullish(),
+  linkUrl: zod.string().nullish(),
+  ordem: zod.number().optional(),
+  ativo: zod.boolean().optional(),
+});
+
+export const UpdateLojaBannerResponse = zod.object({
+  id: zod.number(),
+  imageUrl: zod.string(),
+  titulo: zod.string().nullish(),
+  linkUrl: zod.string().nullish(),
+  ordem: zod.number(),
+  ativo: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a store banner
+ */
+export const DeleteLojaBannerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary Get public virtual catalog by slug (no auth)
  */
 export const GetCatalogoPublicoParams = zod.object({
@@ -25,15 +103,29 @@ export const GetCatalogoPublicoResponse = zod.object({
   loja: zod.object({
     nomeNegocio: zod.string(),
     logoUrl: zod.string().nullish(),
+    bannerPrincipalUrl: zod.string().nullish(),
+    corPrincipal: zod.string().nullish(),
+    corSecundaria: zod.string().nullish(),
+    descricao: zod.string().nullish(),
     cidade: zod.string().nullish(),
     estado: zod.string().nullish(),
     telefoneWhatsapp: zod.string().nullish(),
     mensagemBoasVindas: zod.string().nullish(),
   }),
+  banners: zod.array(
+    zod.object({
+      id: zod.number(),
+      imageUrl: zod.string(),
+      titulo: zod.string().nullish(),
+      linkUrl: zod.string().nullish(),
+      ordem: zod.number(),
+    }),
+  ),
   categorias: zod.array(
     zod.object({
       id: zod.number(),
       nome: zod.string(),
+      cor: zod.string().nullish(),
     }),
   ),
   produtos: zod.array(
@@ -909,6 +1001,9 @@ export const DeleteProdutoParams = zod.object({
 export const ListCategoriasResponseItem = zod.object({
   id: zod.number(),
   nome: zod.string(),
+  cor: zod.string().nullish(),
+  ordem: zod.number().optional(),
+  exibirNoCatalogo: zod.boolean().optional(),
   createdAt: zod.coerce.date().optional(),
 });
 export const ListCategoriasResponse = zod.array(ListCategoriasResponseItem);
@@ -918,6 +1013,32 @@ export const ListCategoriasResponse = zod.array(ListCategoriasResponseItem);
  */
 export const CreateCategoriaBody = zod.object({
   nome: zod.string(),
+  cor: zod.string().optional(),
+  ordem: zod.number().optional(),
+  exibirNoCatalogo: zod.boolean().optional(),
+});
+
+/**
+ * @summary Update a category
+ */
+export const UpdateCategoriaParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateCategoriaBody = zod.object({
+  nome: zod.string().optional(),
+  cor: zod.string().nullish(),
+  ordem: zod.number().optional(),
+  exibirNoCatalogo: zod.boolean().optional(),
+});
+
+export const UpdateCategoriaResponse = zod.object({
+  id: zod.number(),
+  nome: zod.string(),
+  cor: zod.string().nullish(),
+  ordem: zod.number().optional(),
+  exibirNoCatalogo: zod.boolean().optional(),
+  createdAt: zod.coerce.date().optional(),
 });
 
 /**
@@ -935,6 +1056,10 @@ export const GetConfiguracoesResponse = zod.object({
   nomeNegocio: zod.string().nullish(),
   telefoneWhatsapp: zod.string().nullish(),
   logoUrl: zod.string().nullish(),
+  bannerPrincipalUrl: zod.string().nullish(),
+  corPrincipal: zod.string().nullish(),
+  corSecundaria: zod.string().nullish(),
+  descricao: zod.string().nullish(),
   catalogoSlug: zod.string().nullish(),
   catalogoAtivo: zod.boolean().optional(),
   cidade: zod.string().nullish(),
@@ -950,6 +1075,10 @@ export const UpdateConfiguracoesBody = zod.object({
   nomeNegocio: zod.string().optional(),
   telefoneWhatsapp: zod.string().optional(),
   logoUrl: zod.string().optional(),
+  bannerPrincipalUrl: zod.string().optional(),
+  corPrincipal: zod.string().optional(),
+  corSecundaria: zod.string().optional(),
+  descricao: zod.string().optional(),
   catalogoSlug: zod.string().optional(),
   catalogoAtivo: zod.boolean().optional(),
   cidade: zod.string().optional(),
@@ -963,6 +1092,10 @@ export const UpdateConfiguracoesResponse = zod.object({
   nomeNegocio: zod.string().nullish(),
   telefoneWhatsapp: zod.string().nullish(),
   logoUrl: zod.string().nullish(),
+  bannerPrincipalUrl: zod.string().nullish(),
+  corPrincipal: zod.string().nullish(),
+  corSecundaria: zod.string().nullish(),
+  descricao: zod.string().nullish(),
   catalogoSlug: zod.string().nullish(),
   catalogoAtivo: zod.boolean().optional(),
   cidade: zod.string().nullish(),

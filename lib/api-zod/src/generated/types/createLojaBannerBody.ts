@@ -6,12 +6,10 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export interface Categoria {
-  id: number;
-  nome: string;
-  /** @nullable */
-  cor?: string | null;
+export interface CreateLojaBannerBody {
+  imageUrl: string;
+  titulo?: string;
+  linkUrl?: string;
   ordem?: number;
-  exibirNoCatalogo?: boolean;
-  createdAt?: Date;
+  ativo?: boolean;
 }

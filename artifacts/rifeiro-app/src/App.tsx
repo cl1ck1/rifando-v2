@@ -20,6 +20,7 @@ import Configuracoes from "@/pages/Configuracoes";
 import CatalogoPublico from "@/pages/CatalogoPublico";
 import Rotas from "@/pages/Rotas";
 import RotaDetail from "@/pages/RotaDetail";
+import Personalizacao from "@/pages/Personalizacao";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -129,6 +130,7 @@ function AppRouter() {
             <Route path="/parcelas" component={() => <ProtectedRoute component={Parcelas} />} />
             <Route path="/catalogo" component={() => <ProtectedRoute component={Catalogo} />} />
             <Route path="/configuracoes" component={() => <ProtectedRoute component={Configuracoes} />} />
+            <Route path="/personalizacao" component={() => <ProtectedRoute component={Personalizacao} />} />
 
             <Route path="/catalogo/:slug" component={CatalogoPublico} />
 

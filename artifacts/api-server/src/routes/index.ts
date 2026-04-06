@@ -10,10 +10,13 @@ import configuracoesRouter from "./configuracoes";
 import promissoriaRouter from "./promissoria";
 import catalogoPublicoRouter from "./catalogoPublico";
 import rotasRouter from "./rotas";
+import lojaBannersRouter from "./lojaBanners";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(storageRouter);
 router.use(catalogoPublicoRouter);
 router.use(dashboardRouter);
 router.use(vendasRouter);
@@ -23,6 +26,7 @@ router.use(parcelasRouter);
 router.use(produtosRouter);
 router.use(categoriasRouter);
 router.use(configuracoesRouter);
+router.use(lojaBannersRouter);
 router.use(promissoriaRouter);
 
 export default router;

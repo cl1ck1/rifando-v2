@@ -6,12 +6,7 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export interface Categoria {
-  id: number;
-  nome: string;
-  /** @nullable */
-  cor?: string | null;
-  ordem?: number;
-  exibirNoCatalogo?: boolean;
-  createdAt?: Date;
+export interface UploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
 }

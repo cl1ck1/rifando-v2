@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { configuracoesTable, produtosTable, categoriasTable } from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
+import { configuracoesTable, produtosTable, categoriasTable, lojaBannersTable } from "@workspace/db";
+import { eq, and, asc, sql } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -27,29 +27,53 @@ router.get("/catalogo/:slug", async (req, res): Promise<void> => {
 
     const config = configs[0];
 
-    const produtos = await db.select().from(produtosTable)
-      .where(and(
-        eq(produtosTable.userId, config.userId),
-        eq(produtosTable.ativo, true)
-      ))
-      .orderBy(sql`${produtosTable.nome} ASC`);
+    const [produtos, categorias, banners] = await Promise.all([
+      db.select().from(produtosTable)
+        .where(and(
+          eq(produtosTable.userId, config.userId),
+          eq(produtosTable.ativo, true)
+        ))
+        .orderBy(sql`${produtosTable.nome} ASC`),
 
-    const categorias = await db.select().from(categoriasTable)
-      .where(eq(categoriasTable.userId, config.userId))
-      .orderBy(sql`${categoriasTable.nome} ASC`);
+      db.select().from(categoriasTable)
+        .where(and(
+          eq(categoriasTable.userId, config.userId),
+          eq(categoriasTable.exibirNoCatalogo, true)
+        ))
+        .orderBy(asc(categoriasTable.ordem)),
+
+      db.select().from(lojaBannersTable)
+        .where(and(
+          eq(lojaBannersTable.userId, config.userId),
+          eq(lojaBannersTable.ativo, true)
+        ))
+        .orderBy(asc(lojaBannersTable.ordem)),
+    ]);
 
     res.json({
       loja: {
         nomeNegocio: config.nomeNegocio || "Loja",
         logoUrl: config.logoUrl,
+        bannerPrincipalUrl: config.bannerPrincipalUrl,
+        corPrincipal: config.corPrincipal,
+        corSecundaria: config.corSecundaria,
+        descricao: config.descricao,
         cidade: config.cidade,
         estado: config.estado,
         telefoneWhatsapp: config.telefoneWhatsapp,
         mensagemBoasVindas: config.mensagemBoasVindas,
       },
+      banners: banners.map((b) => ({
+        id: b.id,
+        imageUrl: b.imageUrl,
+        titulo: b.titulo,
+        linkUrl: b.linkUrl,
+        ordem: b.ordem,
+      })),
       categorias: categorias.map((c) => ({
         id: c.id,
         nome: c.nome,
+        cor: c.cor,
       })),
       produtos: produtos.map((p) => ({
         id: p.id,

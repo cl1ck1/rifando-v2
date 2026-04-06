@@ -9,4 +9,5 @@
 export interface CatalogoPublicoCategoria {
   id: number;
   nome: string;
+  cor?: string | null;
 }

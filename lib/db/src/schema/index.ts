@@ -5,6 +5,7 @@ export * from "./parcelas";
 export * from "./produtos";
 export * from "./categorias";
 export * from "./configuracoes";
+export * from "./lojaBanners";
 export * from "./atividades";
 export * from "./rotas";
 export * from "./rotaParadas";

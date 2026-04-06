@@ -5,12 +5,14 @@
  * Sou Rifeiro API - Plataforma para vendedores ambulantes e representantes comerciais
  * OpenAPI spec version: 0.2.0
  */
+import type { CatalogoPublicoBanner } from "./catalogoPublicoBanner";
 import type { CatalogoPublicoCategoria } from "./catalogoPublicoCategoria";
 import type { CatalogoPublicoLoja } from "./catalogoPublicoLoja";
 import type { CatalogoPublicoProduto } from "./catalogoPublicoProduto";
 
 export interface CatalogoPublicoResponse {
   loja: CatalogoPublicoLoja;
+  banners: CatalogoPublicoBanner[];
   categorias: CatalogoPublicoCategoria[];
   produtos: CatalogoPublicoProduto[];
 }

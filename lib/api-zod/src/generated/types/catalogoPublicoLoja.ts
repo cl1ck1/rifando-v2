@@ -9,6 +9,10 @@
 export interface CatalogoPublicoLoja {
   nomeNegocio: string;
   logoUrl?: string | null;
+  bannerPrincipalUrl?: string | null;
+  corPrincipal?: string | null;
+  corSecundaria?: string | null;
+  descricao?: string | null;
   cidade?: string | null;
   estado?: string | null;
   telefoneWhatsapp?: string | null;

@@ -10,7 +10,8 @@ import {
   Settings,
   LogOut,
   X,
-  MapPin
+  MapPin,
+  Palette
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -80,8 +81,20 @@ export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: bool
 
         <div className="p-4 border-t border-sidebar-border">
           <Link
-            href="/configuracoes"
+            href="/personalizacao"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
+              location.startsWith("/personalizacao")
+                ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            }`}
+            onClick={() => setOpen(false)}
+          >
+            <Palette className="w-5 h-5" />
+            Personalizacao
+          </Link>
+          <Link
+            href="/configuracoes"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors mt-1 ${
               location.startsWith("/configuracoes")
                 ? "bg-sidebar-primary text-sidebar-primary-foreground"
                 : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"

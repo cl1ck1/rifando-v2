@@ -8,4 +8,7 @@
 
 export interface CreateCategoriaBody {
   nome: string;
+  cor?: string;
+  ordem?: number;
+  exibirNoCatalogo?: boolean;
 }

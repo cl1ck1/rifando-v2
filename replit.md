@@ -37,8 +37,9 @@ Brazilian SaaS platform for ambulant door-to-door salespeople and commercial rep
 - `parcelas` — Installment tracking (vendaId, clienteId, numero, valor, dataVencimento, status, metodoPagamento)
 - `clientes` — Customer CRM (nome, telefone, cpf, endereco, bairro, cidade, estado, referencia)
 - `produtos` — Product catalog (precoCusto, precoVenda, estoque, categoriaId)
-- `categorias` — Product categories
-- `configuracoes` — Per-user account settings (nomeNegocio, telefoneWhatsapp, catalogoSlug, chavePix)
+- `configuracoes` — Per-user account settings (nomeNegocio, telefoneWhatsapp, catalogoSlug, chavePix, logoUrl, bannerPrincipalUrl, corPrincipal, corSecundaria, descricao)
+- `categorias` — Product categories (nome, cor, ordem, exibirNoCatalogo)
+- `loja_banners` — Store promotional banners for carousel (userId, imageUrl, titulo, linkUrl, ordem, ativo)
 - `atividades` — Activity feed log
 
 ### Frontend Pages
@@ -52,7 +53,8 @@ Brazilian SaaS platform for ambulant door-to-door salespeople and commercial rep
 - `/parcelas` — Installment management with status filters, receive payment by method (pix/dinheiro/cartao/promissoria)
 - `/catalogo` — Product catalog with categories, cost/sale price, stock, margin calculation
 - `/configuracoes` — Account settings (business name, whatsapp, pix key, catalog)
-- `/catalogo/:slug` — Public virtual catalog (no auth required), shows products with search, category filters, WhatsApp deep links, auto-refreshes every 60s
+- `/personalizacao` — Store personalization (3 tabs: Aparencia with logo/banner/colors upload, Carrossel to manage promotional banner images, Categorias to set colors and visibility)
+- `/catalogo/:slug` — Public virtual catalog (no auth required). Features: sticky header with logo, banner carousel with autoplay, colored category filter pills, WhatsApp purchase deep links, auto-refreshes every 60s. Supports custom colors, description, welcome message.
 
 ## Key Commands
 
@@ -77,6 +79,12 @@ Rifeiros are ambulant salespeople who:
 
 ### Public API (no auth)
 - `GET /api/catalogo/:slug` — Returns store info, categories, and active products for a given catalog slug. Returns 404 if slug not found or catalog disabled.
+
+## Object Storage
+- Provider: Replit Object Storage (S3-compatible)
+- Upload flow: POST /api/storage/uploads/request-url → PUT to GCS presigned URL
+- Serve URL: GET /api/storage/objects/:objectPath (served by objectStorage.ts)
+- Used for: store logos, banner images, carousel images
 
 ## Pending Tasks
 - Task #4: WhatsApp AI sales bot (needs user-provided WhatsApp API credentials)

@@ -15,6 +15,14 @@ export interface Configuracoes {
   /** @nullable */
   logoUrl?: string | null;
   /** @nullable */
+  bannerPrincipalUrl?: string | null;
+  /** @nullable */
+  corPrincipal?: string | null;
+  /** @nullable */
+  corSecundaria?: string | null;
+  /** @nullable */
+  descricao?: string | null;
+  /** @nullable */
   catalogoSlug?: string | null;
   catalogoAtivo?: boolean;
   /** @nullable */

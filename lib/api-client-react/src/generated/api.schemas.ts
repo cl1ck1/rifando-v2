@@ -354,11 +354,64 @@ export interface UpdateProdutoBody {
 export interface Categoria {
   id: number;
   nome: string;
+  /** @nullable */
+  cor?: string | null;
+  ordem?: number;
+  exibirNoCatalogo?: boolean;
   createdAt?: string;
 }
 
 export interface CreateCategoriaBody {
   nome: string;
+  cor?: string;
+  ordem?: number;
+  exibirNoCatalogo?: boolean;
+}
+
+export interface UpdateCategoriaBody {
+  nome?: string;
+  cor?: string | null;
+  ordem?: number;
+  exibirNoCatalogo?: boolean;
+}
+
+export interface LojaBanner {
+  id: number;
+  imageUrl: string;
+  /** @nullable */
+  titulo?: string | null;
+  /** @nullable */
+  linkUrl?: string | null;
+  ordem: number;
+  ativo: boolean;
+  createdAt: string;
+}
+
+export interface CreateLojaBannerBody {
+  imageUrl: string;
+  titulo?: string;
+  linkUrl?: string;
+  ordem?: number;
+  ativo?: boolean;
+}
+
+export interface UpdateLojaBannerBody {
+  imageUrl?: string;
+  titulo?: string | null;
+  linkUrl?: string | null;
+  ordem?: number;
+  ativo?: boolean;
+}
+
+export interface UploadUrlRequest {
+  name: string;
+  size: number;
+  contentType: string;
+}
+
+export interface UploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
 }
 
 export interface Configuracoes {
@@ -369,6 +422,14 @@ export interface Configuracoes {
   telefoneWhatsapp?: string | null;
   /** @nullable */
   logoUrl?: string | null;
+  /** @nullable */
+  bannerPrincipalUrl?: string | null;
+  /** @nullable */
+  corPrincipal?: string | null;
+  /** @nullable */
+  corSecundaria?: string | null;
+  /** @nullable */
+  descricao?: string | null;
   /** @nullable */
   catalogoSlug?: string | null;
   catalogoAtivo?: boolean;
@@ -386,6 +447,10 @@ export interface UpdateConfiguracoesBody {
   nomeNegocio?: string;
   telefoneWhatsapp?: string;
   logoUrl?: string;
+  bannerPrincipalUrl?: string;
+  corPrincipal?: string;
+  corSecundaria?: string;
+  descricao?: string;
   catalogoSlug?: string;
   catalogoAtivo?: boolean;
   cidade?: string;
@@ -397,10 +462,22 @@ export interface UpdateConfiguracoesBody {
 export interface CatalogoPublicoLoja {
   nomeNegocio: string;
   logoUrl?: string | null;
+  bannerPrincipalUrl?: string | null;
+  corPrincipal?: string | null;
+  corSecundaria?: string | null;
+  descricao?: string | null;
   cidade?: string | null;
   estado?: string | null;
   telefoneWhatsapp?: string | null;
   mensagemBoasVindas?: string | null;
+}
+
+export interface CatalogoPublicoBanner {
+  id: number;
+  imageUrl: string;
+  titulo?: string | null;
+  linkUrl?: string | null;
+  ordem: number;
 }
 
 export interface CatalogoPublicoProduto {
@@ -417,10 +494,12 @@ export interface CatalogoPublicoProduto {
 export interface CatalogoPublicoCategoria {
   id: number;
   nome: string;
+  cor?: string | null;
 }
 
 export interface CatalogoPublicoResponse {
   loja: CatalogoPublicoLoja;
+  banners: CatalogoPublicoBanner[];
   categorias: CatalogoPublicoCategoria[];
   produtos: CatalogoPublicoProduto[];
 }

@@ -6,7 +6,7 @@ import { Link } from "wouter";
 import {
   Users, ShoppingBag, DollarSign, AlertTriangle,
   TrendingUp, CalendarCheck, Package, MapPin,
-  ChevronRight, ArrowRight,
+  ChevronRight, ArrowRight, Palette,
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -69,6 +69,17 @@ const modulos = [
     iconColor: "text-green-600 dark:text-green-400",
     border: "border-green-200 dark:border-green-800",
     hover: "hover:border-green-400 hover:shadow-green-100",
+  },
+  {
+    href: "/personalizacao",
+    label: "Personalizacao",
+    descricao: "Personalize a aparencia e o catalogo publico da sua loja",
+    icon: Palette,
+    bg: "bg-rose-50 dark:bg-rose-950/30",
+    iconBg: "bg-rose-100 dark:bg-rose-900/50",
+    iconColor: "text-rose-600 dark:text-rose-400",
+    border: "border-rose-200 dark:border-rose-800",
+    hover: "hover:border-rose-400 hover:shadow-rose-100",
   },
 ];
 

@@ -28,6 +28,10 @@ tags:
     description: Public virtual catalog (no auth)
   - name: rotas
     description: Travel routes management
+  - name: loja-banners
+    description: Store promotional banners
+  - name: storage
+    description: Object storage upload and serving
 
 paths:
   /healthz:
@@ -42,6 +46,123 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Storage ────────────────────────────────────────
+  /storage/uploads/request-url:
+    post:
+      tags: [storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlRequest"
+      responses:
+        "200":
+          description: Presigned upload URL generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+        "400":
+          description: Missing or invalid required fields
+
+  /storage/objects/{objectPath}:
+    get:
+      tags: [storage]
+      operationId: getStorageObject
+      summary: Serve an uploaded object
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Object content streamed
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Object not found
+
+  # ── Loja Banners ────────────────────────────────────
+  /loja-banners:
+    get:
+      operationId: listLojaBanners
+      tags: [loja-banners]
+      summary: List all store banners
+      responses:
+        "200":
+          description: List of banners
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LojaBanner"
+    post:
+      operationId: createLojaBanner
+      tags: [loja-banners]
+      summary: Create a store banner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLojaBannerBody"
+      responses:
+        "201":
+          description: Created banner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LojaBanner"
+
+  /loja-banners/{id}:
+    patch:
+      operationId: updateLojaBanner
+      tags: [loja-banners]
+      summary: Update a store banner
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLojaBannerBody"
+      responses:
+        "200":
+          description: Updated banner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LojaBanner"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteLojaBanner
+      tags: [loja-banners]
+      summary: Delete a store banner
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
 
   # ── Catalogo Publico ───────────────────────────────
   /catalogo/{slug}:
@@ -815,6 +936,31 @@ paths:
                 $ref: "#/components/schemas/Categoria"
 
   /categorias/{id}:
+    patch:
+      operationId: updateCategoria
+      tags: [categorias]
+      summary: Update a category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCategoriaBody"
+      responses:
+        "200":
+          description: Updated category
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Categoria"
+        "404":
+          description: Not found
     delete:
       operationId: deleteCategoria
       tags: [categorias]
@@ -1304,6 +1450,12 @@ components:
           type: integer
         nome:
           type: string
+        cor:
+          type: ["string", "null"]
+        ordem:
+          type: integer
+        exibirNoCatalogo:
+          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -1313,6 +1465,98 @@ components:
       required: [nome]
       properties:
         nome:
+          type: string
+        cor:
+          type: string
+        ordem:
+          type: integer
+        exibirNoCatalogo:
+          type: boolean
+
+    UpdateCategoriaBody:
+      type: object
+      properties:
+        nome:
+          type: string
+        cor:
+          type: string
+          nullable: true
+        ordem:
+          type: integer
+        exibirNoCatalogo:
+          type: boolean
+
+    # ── LojaBanner Schemas ─────────────────────────────
+    LojaBanner:
+      type: object
+      required: [id, imageUrl, ordem, ativo, createdAt]
+      properties:
+        id:
+          type: integer
+        imageUrl:
+          type: string
+        titulo:
+          type: ["string", "null"]
+        linkUrl:
+          type: ["string", "null"]
+        ordem:
+          type: integer
+        ativo:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateLojaBannerBody:
+      type: object
+      required: [imageUrl]
+      properties:
+        imageUrl:
+          type: string
+        titulo:
+          type: string
+        linkUrl:
+          type: string
+        ordem:
+          type: integer
+        ativo:
+          type: boolean
+
+    UpdateLojaBannerBody:
+      type: object
+      properties:
+        imageUrl:
+          type: string
+        titulo:
+          type: string
+          nullable: true
+        linkUrl:
+          type: string
+          nullable: true
+        ordem:
+          type: integer
+        ativo:
+          type: boolean
+
+    # ── Storage Schemas ─────────────────────────────────
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+        contentType:
+          type: string
+
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+        objectPath:
           type: string
 
     # ── Configuracoes Schemas ──────────────────────────
@@ -1327,6 +1571,14 @@ components:
         telefoneWhatsapp:
           type: ["string", "null"]
         logoUrl:
+          type: ["string", "null"]
+        bannerPrincipalUrl:
+          type: ["string", "null"]
+        corPrincipal:
+          type: ["string", "null"]
+        corSecundaria:
+          type: ["string", "null"]
+        descricao:
           type: ["string", "null"]
         catalogoSlug:
           type: ["string", "null"]
@@ -1350,6 +1602,14 @@ components:
           type: string
         logoUrl:
           type: string
+        bannerPrincipalUrl:
+          type: string
+        corPrincipal:
+          type: string
+        corSecundaria:
+          type: string
+        descricao:
+          type: string
         catalogoSlug:
           type: string
         catalogoAtivo:
@@ -1372,6 +1632,18 @@ components:
         logoUrl:
           type: string
           nullable: true
+        bannerPrincipalUrl:
+          type: string
+          nullable: true
+        corPrincipal:
+          type: string
+          nullable: true
+        corSecundaria:
+          type: string
+          nullable: true
+        descricao:
+          type: string
+          nullable: true
         cidade:
           type: string
           nullable: true
@@ -1384,6 +1656,23 @@ components:
         mensagemBoasVindas:
           type: string
           nullable: true
+
+    CatalogoPublicoBanner:
+      type: object
+      required: [id, imageUrl, ordem]
+      properties:
+        id:
+          type: integer
+        imageUrl:
+          type: string
+        titulo:
+          type: string
+          nullable: true
+        linkUrl:
+          type: string
+          nullable: true
+        ordem:
+          type: integer
 
     CatalogoPublicoProduto:
       type: object
@@ -1418,13 +1707,20 @@ components:
           type: integer
         nome:
           type: string
+        cor:
+          type: string
+          nullable: true
 
     CatalogoPublicoResponse:
       type: object
-      required: [loja, categorias, produtos]
+      required: [loja, categorias, produtos, banners]
       properties:
         loja:
           $ref: "#/components/schemas/CatalogoPublicoLoja"
+        banners:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogoPublicoBanner"
         categorias:
           type: array
           items:
