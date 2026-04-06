@@ -133,6 +133,7 @@ function AppRouter() {
             <Route path="/personalizacao" component={() => <ProtectedRoute component={Personalizacao} />} />
 
             <Route path="/catalogo/:slug" component={CatalogoPublico} />
+            <Route path="/c/:slug" component={CatalogoPublico} />
 
             <Route component={NotFound} />
           </Switch>

@@ -29,10 +29,10 @@ export const RequestUploadUrlResponse = zod.object({
 });
 
 /**
- * @summary Serve an uploaded object (explicitly public — used for catalog images)
+ * @summary Serve an uploaded catalog asset (public — logos and banner images)
  */
 export const GetStorageObjectParams = zod.object({
-  objectPath: zod.coerce.string(),
+  objectId: zod.coerce.string(),
 });
 
 /**

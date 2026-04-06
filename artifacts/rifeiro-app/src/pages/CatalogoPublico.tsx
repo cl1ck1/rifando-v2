@@ -171,38 +171,24 @@ function BannerCarousel({ banners, corPrincipal }: { banners: Banner[]; corPrinc
         style={{ transform: `translateX(-${currentIndex * 100}%)`, width: `${banners.length * 100}%` }}
       >
         {banners.map((banner) => {
-          const content = (
-            <div className="relative" style={{ width: `${100 / banners.length}%`, flexShrink: 0 }}>
-              <img
-                src={banner.imageUrl}
-                alt={banner.titulo || "Banner"}
-                className="w-full h-52 md:h-80 object-cover"
-              />
-              {banner.titulo && (
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                  <p className="text-white font-semibold text-sm md:text-base drop-shadow">{banner.titulo}</p>
-                </div>
-              )}
-            </div>
-          );
-
-          return banner.linkUrl ? (
-            <a key={banner.id} href={banner.linkUrl} target="_blank" rel="noopener noreferrer" className="block" style={{ width: `${100 / banners.length}%`, flexShrink: 0 }}>
+          const itemStyle = { width: `${100 / banners.length}%`, flexShrink: 0 as const };
+          const inner = (
+            <>
               <img src={banner.imageUrl} alt={banner.titulo || "Banner"} className="w-full h-52 md:h-80 object-cover" />
               {banner.titulo && (
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
                   <p className="text-white font-semibold text-sm md:text-base drop-shadow">{banner.titulo}</p>
                 </div>
               )}
+            </>
+          );
+          return banner.linkUrl ? (
+            <a key={banner.id} href={banner.linkUrl} target="_blank" rel="noopener noreferrer" className="relative block" style={itemStyle}>
+              {inner}
             </a>
           ) : (
-            <div key={banner.id} className="relative" style={{ width: `${100 / banners.length}%`, flexShrink: 0 }}>
-              <img src={banner.imageUrl} alt={banner.titulo || "Banner"} className="w-full h-52 md:h-80 object-cover" />
-              {banner.titulo && (
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                  <p className="text-white font-semibold text-sm md:text-base drop-shadow">{banner.titulo}</p>
-                </div>
-              )}
+            <div key={banner.id} className="relative" style={itemStyle}>
+              {inner}
             </div>
           );
         })}
@@ -354,7 +340,6 @@ export default function CatalogoPublico() {
   return (
     <div className="min-h-[100dvh] bg-background">
 
-      {/* ── Hero section: logo + store name + banner principal ── */}
       <header className="relative overflow-hidden">
         {loja.bannerPrincipalUrl ? (
           <img src={loja.bannerPrincipalUrl} alt="Banner" className="w-full h-44 md:h-64 object-cover" />
@@ -411,12 +396,10 @@ export default function CatalogoPublico() {
         </div>
       </header>
 
-      {/* ── Promotional banner carousel (below hero) ── */}
       {banners.length > 0 && (
         <BannerCarousel banners={banners} corPrincipal={loja.corPrincipal} />
       )}
 
-      {/* ── Welcome / description strip ── */}
       {(loja.mensagemBoasVindas || loja.descricao) && (
         <div className="border-b" style={{ backgroundColor: hexToRgba(primaryColor, 0.05) }}>
           <div className="max-w-6xl mx-auto px-4 py-3 space-y-1 text-center">
@@ -430,7 +413,6 @@ export default function CatalogoPublico() {
         </div>
       )}
 
-      {/* ── Product area ── */}
       <div className="max-w-6xl mx-auto px-4 py-4 space-y-4">
         {/* Search */}
         <div className="relative">

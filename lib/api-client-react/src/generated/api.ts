@@ -235,31 +235,31 @@ export const useRequestUploadUrl = <
 };
 
 /**
- * @summary Serve an uploaded object (explicitly public — used for catalog images)
+ * @summary Serve an uploaded catalog asset (public — logos and banner images)
  */
-export const getGetStorageObjectUrl = (objectPath: string) => {
-  return `/api/storage/objects/${objectPath}`;
+export const getGetStorageObjectUrl = (objectId: string) => {
+  return `/api/storage/objects/uploads/${objectId}`;
 };
 
 export const getStorageObject = async (
-  objectPath: string,
+  objectId: string,
   options?: RequestInit,
 ): Promise<Blob> => {
-  return customFetch<Blob>(getGetStorageObjectUrl(objectPath), {
+  return customFetch<Blob>(getGetStorageObjectUrl(objectId), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetStorageObjectQueryKey = (objectPath: string) => {
-  return [`/api/storage/objects/${objectPath}`] as const;
+export const getGetStorageObjectQueryKey = (objectId: string) => {
+  return [`/api/storage/objects/uploads/${objectId}`] as const;
 };
 
 export const getGetStorageObjectQueryOptions = <
   TData = Awaited<ReturnType<typeof getStorageObject>>,
   TError = ErrorType<void>,
 >(
-  objectPath: string,
+  objectId: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getStorageObject>>,
@@ -272,17 +272,16 @@ export const getGetStorageObjectQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetStorageObjectQueryKey(objectPath);
+    queryOptions?.queryKey ?? getGetStorageObjectQueryKey(objectId);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getStorageObject>>
-  > = ({ signal }) =>
-    getStorageObject(objectPath, { signal, ...requestOptions });
+  > = ({ signal }) => getStorageObject(objectId, { signal, ...requestOptions });
 
   return {
     queryKey,
     queryFn,
-    enabled: !!objectPath,
+    enabled: !!objectId,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof getStorageObject>>,
@@ -297,14 +296,14 @@ export type GetStorageObjectQueryResult = NonNullable<
 export type GetStorageObjectQueryError = ErrorType<void>;
 
 /**
- * @summary Serve an uploaded object (explicitly public — used for catalog images)
+ * @summary Serve an uploaded catalog asset (public — logos and banner images)
  */
 
 export function useGetStorageObject<
   TData = Awaited<ReturnType<typeof getStorageObject>>,
   TError = ErrorType<void>,
 >(
-  objectPath: string,
+  objectId: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getStorageObject>>,
@@ -314,7 +313,7 @@ export function useGetStorageObject<
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetStorageObjectQueryOptions(objectPath, options);
+  const queryOptions = getGetStorageObjectQueryOptions(objectId, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

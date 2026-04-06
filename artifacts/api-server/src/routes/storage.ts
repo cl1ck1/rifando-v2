@@ -87,15 +87,9 @@ router.get("/storage/public-objects/*filePath", async (req: Request, res: Respon
 /**
  * GET /storage/objects/uploads/*
  *
- * Serve uploaded catalog assets (store logos, banner images) publicly.
- *
- * Scope is intentionally restricted to the `uploads/` sub-directory — the
- * only path prefix written by getObjectEntityUploadURL() in this app.
- * Anything stored under other prefixes in PRIVATE_OBJECT_DIR is not exposed
- * by this route, preserving the ability to protect future private objects.
- *
- * Upload access is gated behind auth (POST /storage/uploads/request-url);
- * read access is public because catalog visitors are unauthenticated.
+ * Serve catalog assets (logos, banners) uploaded through this app.
+ * Scoped to the uploads/ sub-directory only — the path prefix used by
+ * getObjectEntityUploadURL(). Public read; upload is auth-gated.
  */
 router.get("/storage/objects/uploads/*path", async (req: Request, res: Response) => {
   try {
