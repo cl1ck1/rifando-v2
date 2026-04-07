@@ -307,10 +307,25 @@ async function seedDatabase(userId: string): Promise<void> {
   console.log("Loja banners OK");
 }
 
+// ── Generate sign-in token (bypasses email OTP) ────────────────────────────
+
+async function generateSignInLink(userId: string): Promise<string | null> {
+  const secretKey = process.env.CLERK_SECRET_KEY;
+  if (!secretKey) return null;
+  const res = await fetch("https://api.clerk.com/v1/sign_in_tokens", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId, expires_in_seconds: 86400 }),
+  });
+  const data = await res.json() as { url?: string };
+  return data.url ?? null;
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 const userId = await getOrCreateClerkUser();
 await seedDatabase(userId);
+const signInLink = await generateSignInLink(userId);
 
 console.log("\n========================================");
 console.log("  CONTA DEMO CRIADA COM SUCESSO");
@@ -318,6 +333,11 @@ console.log("========================================");
 console.log(`  Email:    ${DEMO_EMAIL}`);
 console.log(`  Senha:    ${DEMO_PASSWORD}`);
 console.log(`  Catalogo: /catalogo/${CATALOG_SLUG}  ou  /c/${CATALOG_SLUG}`);
+if (signInLink) {
+  console.log("\n  Link de acesso direto (valido 24h):");
+  console.log(`  ${signInLink}`);
+  console.log("  (Use este link para entrar sem precisar do e-mail)");
+}
 console.log("========================================\n");
 
 process.exit(0);
