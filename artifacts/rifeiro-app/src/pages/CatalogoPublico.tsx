@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, ShoppingBag, MapPin, MessageCircle, Store, ArrowLeft, Package, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Search, ShoppingBag, MapPin, MessageCircle, Store, ArrowLeft, Package,
+  ChevronLeft, ChevronRight, ShoppingCart, Plus, Minus, X, Trash2, CheckCheck,
+} from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -52,6 +55,13 @@ interface CatalogoData {
   produtos: Produto[];
 }
 
+interface CartItem {
+  produto: Produto;
+  quantidade: number;
+}
+
+// ── Formatters ──────────────────────────────────────────────────────────────
+
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
@@ -65,20 +75,38 @@ function isValidWhatsAppPhone(phone: string | null): boolean {
   return cleanPhoneNumber(phone).length >= 10;
 }
 
-function buildWhatsAppUrl(phone: string, productName: string, price: number): string {
-  const cleanPhone = cleanPhoneNumber(phone);
-  const phoneWithCountry = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
-  const message = encodeURIComponent(
-    `Ola! Tenho interesse no produto: *${productName}* (${formatCurrency(price)}). Podemos conversar?`
-  );
-  return `https://wa.me/${phoneWithCountry}?text=${message}`;
-}
-
 function hexToRgba(hex: string, alpha: number): string {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!result) return `rgba(37,99,235,${alpha})`;
   return `rgba(${parseInt(result[1], 16)},${parseInt(result[2], 16)},${parseInt(result[3], 16)},${alpha})`;
 }
+
+function buildCartWhatsAppUrl(phone: string, lojaNome: string, items: CartItem[]): string {
+  const cleanPhone = cleanPhoneNumber(phone);
+  const phoneWithCountry = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+
+  const linhas = items.map((item) => {
+    const subtotal = formatCurrency(item.produto.precoVenda * item.quantidade);
+    return `• ${item.quantidade}x ${item.produto.nome} — ${subtotal}`;
+  });
+
+  const total = items.reduce((acc, item) => acc + item.produto.precoVenda * item.quantidade, 0);
+
+  const message = [
+    `Ola, ${lojaNome}! Gostaria de fazer um pedido:`,
+    ``,
+    `*MEUS PRODUTOS:*`,
+    ...linhas,
+    ``,
+    `*Total: ${formatCurrency(total)}*`,
+    ``,
+    `Podemos finalizar?`,
+  ].join("\n");
+
+  return `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(message)}`;
+}
+
+// ── Static Views ─────────────────────────────────────────────────────────────
 
 function LojaNotFound() {
   return (
@@ -146,23 +174,26 @@ function LoadingSkeleton() {
   );
 }
 
+// ── Banner Carousel ──────────────────────────────────────────────────────────
+
 function BannerCarousel({ banners, corPrincipal }: { banners: Banner[]; corPrincipal: string | null }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const primaryColor = corPrincipal || "#2563eb";
 
-  const goTo = (index: number) => setCurrentIndex(((index % banners.length) + banners.length) % banners.length);
+  const goTo = useCallback((index: number) => {
+    setCurrentIndex(((index % banners.length) + banners.length) % banners.length);
+  }, [banners.length]);
+
   const goPrev = () => goTo(currentIndex - 1);
-  const goNext = () => goTo(currentIndex + 1);
+  const goNext = useCallback(() => goTo(currentIndex + 1), [currentIndex, goTo]);
 
   useEffect(() => {
     if (banners.length <= 1) return;
     const timer = setInterval(goNext, 4500);
     return () => clearInterval(timer);
-  }, [banners.length, currentIndex]);
+  }, [banners.length, goNext]);
 
   if (banners.length === 0) return null;
-
-  const current = banners[currentIndex];
 
   return (
     <div className="relative overflow-hidden bg-black">
@@ -196,18 +227,10 @@ function BannerCarousel({ banners, corPrincipal }: { banners: Banner[]; corPrinc
 
       {banners.length > 1 && (
         <>
-          <button
-            onClick={goPrev}
-            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors"
-            aria-label="Anterior"
-          >
+          <button onClick={goPrev} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors" aria-label="Anterior">
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <button
-            onClick={goNext}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors"
-            aria-label="Proximo"
-          >
+          <button onClick={goNext} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors" aria-label="Proximo">
             <ChevronRight className="w-5 h-5" />
           </button>
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
@@ -230,11 +253,26 @@ function BannerCarousel({ banners, corPrincipal }: { banners: Banner[]; corPrinc
   );
 }
 
-function ProductCard({ produto, whatsappPhone, corPrincipal }: { produto: Produto; whatsappPhone: string | null; corPrincipal: string | null }) {
+// ── Product Card ─────────────────────────────────────────────────────────────
+
+function ProductCard({
+  produto,
+  corPrincipal,
+  quantidadeNoCarrinho,
+  onAdd,
+  onRemove,
+}: {
+  produto: Produto;
+  corPrincipal: string | null;
+  quantidadeNoCarrinho: number;
+  onAdd: (produto: Produto) => void;
+  onRemove: (produtoId: number) => void;
+}) {
   const primaryColor = corPrincipal || "#2563eb";
+  const esgotado = produto.estoque <= 0;
 
   return (
-    <div className="group rounded-xl border bg-card overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
+    <div className="group rounded-xl border bg-card overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 flex flex-col">
       <div className="aspect-[4/3] bg-muted/50 relative overflow-hidden">
         {produto.imagemUrl ? (
           <img
@@ -247,38 +285,246 @@ function ProductCard({ produto, whatsappPhone, corPrincipal }: { produto: Produt
             <Package className="w-12 h-12 text-muted-foreground/40" />
           </div>
         )}
-        {produto.estoque <= 0 && (
+        {esgotado && (
           <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
             <span className="bg-destructive text-destructive-foreground text-xs font-semibold px-2 py-1 rounded-full">Esgotado</span>
           </div>
         )}
+        {quantidadeNoCarrinho > 0 && (
+          <div
+            className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shadow"
+            style={{ backgroundColor: primaryColor }}
+          >
+            {quantidadeNoCarrinho}
+          </div>
+        )}
       </div>
 
-      <div className="p-3 space-y-2">
+      <div className="p-3 space-y-2 flex-1 flex flex-col">
         <h3 className="font-semibold text-sm leading-tight line-clamp-2 text-foreground">{produto.nome}</h3>
         {produto.descricao && (
           <p className="text-xs text-muted-foreground line-clamp-2">{produto.descricao}</p>
         )}
+        <div className="flex-1" />
         <div className="pt-1">
           <span className="text-lg font-bold" style={{ color: primaryColor }}>
             {formatCurrency(produto.precoVenda)}
           </span>
         </div>
-        {isValidWhatsAppPhone(whatsappPhone) && produto.estoque > 0 && (
-          <a
-            href={buildWhatsAppUrl(whatsappPhone!, produto.nome, produto.precoVenda)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full rounded-lg bg-[#25D366] hover:bg-[#20BD5A] text-white text-sm font-medium py-2.5 transition-colors"
-          >
-            <MessageCircle className="w-4 h-4" />
-            Comprar via WhatsApp
-          </a>
+
+        {!esgotado && (
+          quantidadeNoCarrinho === 0 ? (
+            <button
+              onClick={() => onAdd(produto)}
+              className="flex items-center justify-center gap-2 w-full rounded-lg text-white text-sm font-medium py-2.5 transition-all active:scale-95"
+              style={{ backgroundColor: primaryColor }}
+            >
+              <Plus className="w-4 h-4" />
+              Adicionar
+            </button>
+          ) : (
+            <div className="flex items-center justify-between gap-2">
+              <button
+                onClick={() => onRemove(produto.id)}
+                className="w-9 h-9 rounded-lg border flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="flex-1 text-center font-semibold text-sm" style={{ color: primaryColor }}>
+                {quantidadeNoCarrinho}
+              </span>
+              <button
+                onClick={() => onAdd(produto)}
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-white transition-all active:scale-95"
+                style={{ backgroundColor: primaryColor }}
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          )
         )}
       </div>
     </div>
   );
 }
+
+// ── Cart Drawer ───────────────────────────────────────────────────────────────
+
+function CartDrawer({
+  isOpen,
+  onClose,
+  cart,
+  loja,
+  corPrincipal,
+  onAdd,
+  onRemove,
+  onRemoveAll,
+  onClear,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  cart: CartItem[];
+  loja: Loja;
+  corPrincipal: string;
+  onAdd: (produto: Produto) => void;
+  onRemove: (produtoId: number) => void;
+  onRemoveAll: (produtoId: number) => void;
+  onClear: () => void;
+}) {
+  const total = cart.reduce((acc, item) => acc + item.produto.precoVenda * item.quantidade, 0);
+  const totalItens = cart.reduce((acc, item) => acc + item.quantidade, 0);
+  const canFinish = isValidWhatsAppPhone(loja.telefoneWhatsapp) && cart.length > 0;
+
+  function handleFinish() {
+    if (!canFinish) return;
+    const url = buildCartWhatsAppUrl(loja.telefoneWhatsapp!, loja.nomeNegocio, cart);
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  return (
+    <>
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40 transition-opacity"
+          onClick={onClose}
+        />
+      )}
+
+      <div
+        className={`fixed bottom-0 left-0 right-0 md:right-0 md:left-auto md:top-0 md:bottom-0 md:w-96 bg-background z-50 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out rounded-t-2xl md:rounded-none`}
+        style={{
+          transform: isOpen ? "translateY(0)" : "translateY(100%)",
+          maxHeight: "85dvh",
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-4 border-b flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <ShoppingCart className="w-5 h-5" style={{ color: corPrincipal }} />
+            <span className="font-bold text-foreground">Meu carrinho</span>
+            <span
+              className="text-xs font-semibold text-white px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: corPrincipal }}
+            >
+              {totalItens}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {cart.length > 0 && (
+              <button
+                onClick={onClear}
+                className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 transition-colors"
+              >
+                <Trash2 className="w-3 h-3" />
+                Limpar
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Items */}
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+          {cart.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full py-12 gap-3">
+              <ShoppingCart className="w-12 h-12 text-muted-foreground/30" />
+              <p className="text-muted-foreground text-sm">Seu carrinho esta vazio</p>
+              <button
+                onClick={onClose}
+                className="text-sm font-medium underline underline-offset-2"
+                style={{ color: corPrincipal }}
+              >
+                Continuar comprando
+              </button>
+            </div>
+          ) : (
+            cart.map((item) => (
+              <div key={item.produto.id} className="flex items-center gap-3 bg-muted/30 rounded-xl p-3">
+                <div className="w-14 h-14 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                  {item.produto.imagemUrl ? (
+                    <img src={item.produto.imagemUrl} alt={item.produto.nome} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package className="w-6 h-6 text-muted-foreground/40" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium leading-tight line-clamp-1">{item.produto.nome}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {formatCurrency(item.produto.precoVenda)} cada
+                  </p>
+                  <p className="text-sm font-bold mt-1" style={{ color: corPrincipal }}>
+                    {formatCurrency(item.produto.precoVenda * item.quantidade)}
+                  </p>
+                </div>
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => onRemove(item.produto.id)}
+                      className="w-7 h-7 rounded-md border flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
+                    >
+                      <Minus className="w-3 h-3" />
+                    </button>
+                    <span className="w-6 text-center text-sm font-semibold">{item.quantidade}</span>
+                    <button
+                      onClick={() => onAdd(item.produto)}
+                      className="w-7 h-7 rounded-md flex items-center justify-center text-white transition-all"
+                      style={{ backgroundColor: corPrincipal }}
+                    >
+                      <Plus className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => onRemoveAll(item.produto.id)}
+                    className="text-destructive/70 hover:text-destructive transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Footer */}
+        {cart.length > 0 && (
+          <div className="border-t px-4 py-4 space-y-3 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{totalItens} {totalItens === 1 ? "item" : "itens"}</span>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="text-xl font-bold" style={{ color: corPrincipal }}>{formatCurrency(total)}</p>
+              </div>
+            </div>
+
+            {canFinish ? (
+              <button
+                onClick={handleFinish}
+                className="w-full py-3.5 rounded-xl text-white font-semibold flex items-center justify-center gap-2 text-sm transition-all active:scale-[0.98] shadow-md"
+                style={{ backgroundColor: "#25D366" }}
+              >
+                <CheckCheck className="w-5 h-5" />
+                Finalizar pedido via WhatsApp
+              </button>
+            ) : (
+              <div className="w-full py-3.5 rounded-xl bg-muted text-muted-foreground text-sm text-center font-medium">
+                WhatsApp nao disponivel
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function CatalogoPublico() {
   const params = useParams<{ slug: string }>();
@@ -290,7 +536,11 @@ export default function CatalogoPublico() {
   const [search, setSearch] = useState("");
   const [selectedCategoria, setSelectedCategoria] = useState<number | null>(null);
 
-  const fetchCatalog = (isRefresh = false) => {
+  // Cart state
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+
+  const fetchCatalog = useCallback((isRefresh = false) => {
     if (!slug) return;
     if (!isRefresh) {
       setLoading(true);
@@ -309,14 +559,40 @@ export default function CatalogoPublico() {
         setLoading(false);
       })
       .catch(() => { if (!isRefresh) setServerError(true); setLoading(false); });
-  };
+  }, [slug]);
 
-  useEffect(() => { fetchCatalog(); }, [slug]);
+  useEffect(() => { fetchCatalog(); }, [fetchCatalog]);
   useEffect(() => {
     if (!data || notFound || serverError) return;
     const interval = setInterval(() => fetchCatalog(true), 60000);
     return () => clearInterval(interval);
-  }, [slug, data, notFound, serverError]);
+  }, [fetchCatalog, data, notFound, serverError]);
+
+  // Cart helpers
+  function addToCart(produto: Produto) {
+    setCart((prev) => {
+      const existing = prev.find((i) => i.produto.id === produto.id);
+      if (existing) return prev.map((i) => i.produto.id === produto.id ? { ...i, quantidade: i.quantidade + 1 } : i);
+      return [...prev, { produto, quantidade: 1 }];
+    });
+  }
+
+  function removeFromCart(produtoId: number) {
+    setCart((prev) => {
+      const existing = prev.find((i) => i.produto.id === produtoId);
+      if (!existing) return prev;
+      if (existing.quantidade <= 1) return prev.filter((i) => i.produto.id !== produtoId);
+      return prev.map((i) => i.produto.id === produtoId ? { ...i, quantidade: i.quantidade - 1 } : i);
+    });
+  }
+
+  function removeAllFromCart(produtoId: number) {
+    setCart((prev) => prev.filter((i) => i.produto.id !== produtoId));
+  }
+
+  function clearCart() {
+    setCart([]);
+  }
 
   if (loading) return <LoadingSkeleton />;
   if (notFound) return <LojaNotFound />;
@@ -324,6 +600,8 @@ export default function CatalogoPublico() {
 
   const { loja, banners, categorias, produtos } = data;
   const primaryColor = loja.corPrincipal || "#2563eb";
+  const totalItensCarrinho = cart.reduce((acc, i) => acc + i.quantidade, 0);
+  const totalCarrinho = cart.reduce((acc, i) => acc + i.produto.precoVenda * i.quantidade, 0);
 
   const filteredProdutos = produtos.filter((p) => {
     const q = search.toLowerCase();
@@ -340,6 +618,7 @@ export default function CatalogoPublico() {
   return (
     <div className="min-h-[100dvh] bg-background">
 
+      {/* Header */}
       <header className="relative overflow-hidden">
         {loja.bannerPrincipalUrl ? (
           <img src={loja.bannerPrincipalUrl} alt="Banner" className="w-full h-44 md:h-64 object-cover" />
@@ -349,9 +628,7 @@ export default function CatalogoPublico() {
             style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${hexToRgba(primaryColor, 0.7)} 100%)` }}
           />
         )}
-
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-
         <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
           <div className="max-w-6xl mx-auto flex items-end gap-3">
             {loja.logoUrl ? (
@@ -369,9 +646,7 @@ export default function CatalogoPublico() {
               </div>
             )}
             <div className="flex-1 min-w-0 pb-1">
-              <h1 className="text-xl md:text-2xl font-bold text-white drop-shadow truncate">
-                {loja.nomeNegocio}
-              </h1>
+              <h1 className="text-xl md:text-2xl font-bold text-white drop-shadow truncate">{loja.nomeNegocio}</h1>
               {location && (
                 <p className="text-white/80 text-xs flex items-center gap-1 mt-0.5">
                   <MapPin className="w-3 h-3" />
@@ -413,7 +688,7 @@ export default function CatalogoPublico() {
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-4 py-4 space-y-4">
+      <div className="max-w-6xl mx-auto px-4 py-4 space-y-4 pb-28">
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -451,10 +726,7 @@ export default function CatalogoPublico() {
                     : { backgroundColor: hexToRgba(catColor, 0.08), color: catColor, borderColor: hexToRgba(catColor, 0.3) }
                   }
                 >
-                  <span
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: isSelected ? "rgba(255,255,255,0.8)" : catColor }}
-                  />
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: isSelected ? "rgba(255,255,255,0.8)" : catColor }} />
                   {cat.nome}
                 </button>
               );
@@ -474,14 +746,19 @@ export default function CatalogoPublico() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-            {filteredProdutos.map((produto) => (
-              <ProductCard
-                key={produto.id}
-                produto={produto}
-                whatsappPhone={loja.telefoneWhatsapp}
-                corPrincipal={loja.corPrincipal}
-              />
-            ))}
+            {filteredProdutos.map((produto) => {
+              const cartItem = cart.find((i) => i.produto.id === produto.id);
+              return (
+                <ProductCard
+                  key={produto.id}
+                  produto={produto}
+                  corPrincipal={loja.corPrincipal}
+                  quantidadeNoCarrinho={cartItem?.quantidade ?? 0}
+                  onAdd={addToCart}
+                  onRemove={removeFromCart}
+                />
+              );
+            })}
           </div>
         )}
 
@@ -497,6 +774,41 @@ export default function CatalogoPublico() {
           <p className="text-[10px] text-muted-foreground/60 mt-1">Feito com Sou Rifeiro</p>
         </div>
       </footer>
+
+      {/* Floating cart button */}
+      {totalItensCarrinho > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30">
+          <button
+            onClick={() => setCartOpen(true)}
+            className="flex items-center gap-3 px-5 py-3.5 rounded-2xl text-white shadow-xl transition-all active:scale-95 hover:shadow-2xl"
+            style={{ backgroundColor: primaryColor }}
+          >
+            <div className="relative">
+              <ShoppingCart className="w-5 h-5" />
+              <span className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-white text-[10px] font-bold flex items-center justify-center" style={{ color: primaryColor }}>
+                {totalItensCarrinho}
+              </span>
+            </div>
+            <div className="text-left">
+              <p className="text-xs opacity-90 leading-none">Ver carrinho</p>
+              <p className="text-sm font-bold leading-tight mt-0.5">{formatCurrency(totalCarrinho)}</p>
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* Cart Drawer */}
+      <CartDrawer
+        isOpen={cartOpen}
+        onClose={() => setCartOpen(false)}
+        cart={cart}
+        loja={loja}
+        corPrincipal={primaryColor}
+        onAdd={addToCart}
+        onRemove={removeFromCart}
+        onRemoveAll={removeAllFromCart}
+        onClear={clearCart}
+      />
     </div>
   );
 }
