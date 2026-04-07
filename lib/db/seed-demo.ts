@@ -36,8 +36,19 @@ async function getOrCreateClerkUser(): Promise<string> {
   );
   const existing = await searchRes.json() as Array<{ id: string }>;
   if (Array.isArray(existing) && existing.length > 0) {
-    console.log(`Clerk user already exists: ${existing[0].id}`);
-    return existing[0].id;
+    const userId = existing[0].id;
+    console.log(`Clerk user already exists: ${userId} — resetting password...`);
+    const patchRes = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ password: DEMO_PASSWORD, skip_password_checks: true }),
+    });
+    if (!patchRes.ok) {
+      const err = await patchRes.json();
+      throw new Error(`Failed to reset password: ${JSON.stringify(err)}`);
+    }
+    console.log("Password reset OK.");
+    return userId;
   }
 
   const res = await fetch("https://api.clerk.com/v1/users", {
