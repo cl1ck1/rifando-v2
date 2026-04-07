@@ -12,10 +12,12 @@ import catalogoPublicoRouter from "./catalogoPublico";
 import rotasRouter from "./rotas";
 import lojaBannersRouter from "./lojaBanners";
 import storageRouter from "./storage";
+import demoRouter from "./demo";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(demoRouter);
 router.use(storageRouter);
 router.use(catalogoPublicoRouter);
 router.use(dashboardRouter);
