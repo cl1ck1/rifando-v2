@@ -1,6 +1,5 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { useClerk, useUser } from "@clerk/react";
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -16,6 +15,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useClerk, useUser } from "@clerk/react";
+
+const isDemoMode = !import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 const navItems = [
   { name: "Painel", href: "/painel", icon: LayoutDashboard },
@@ -27,14 +29,51 @@ const navItems = [
   { name: "Produtos", href: "/catalogo", icon: Package },
 ];
 
-export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
-  const [location] = useLocation();
+function ClerkUserSection() {
   const { signOut } = useClerk();
   const { user } = useUser();
 
   const handleSignOut = () => {
     signOut({ redirectUrl: "/" });
   };
+
+  return (
+    <div className="mt-4 pt-4 border-t border-sidebar-border flex items-center gap-3">
+      <Avatar className="w-10 h-10 border border-border">
+        <AvatarImage src={user?.imageUrl} />
+        <AvatarFallback>{user?.firstName?.charAt(0) || "U"}</AvatarFallback>
+      </Avatar>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-foreground truncate">
+          {user?.fullName || "Usuario"}
+        </p>
+        <p className="text-xs text-muted-foreground truncate">
+          {user?.primaryEmailAddress?.emailAddress}
+        </p>
+      </div>
+      <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sair" className="shrink-0 text-muted-foreground hover:text-destructive">
+        <LogOut className="w-5 h-5" />
+      </Button>
+    </div>
+  );
+}
+
+function DemoUserSection() {
+  return (
+    <div className="mt-4 pt-4 border-t border-sidebar-border flex items-center gap-3">
+      <Avatar className="w-10 h-10 border border-border">
+        <AvatarFallback>D</AvatarFallback>
+      </Avatar>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-foreground truncate">Demo</p>
+        <p className="text-xs text-muted-foreground truncate">demo@rifando.com</p>
+      </div>
+    </div>
+  );
+}
+
+export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
+  const [location] = useLocation();
 
   return (
     <>
@@ -107,23 +146,7 @@ export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (open: bool
             Configuracoes
           </Link>
 
-          <div className="mt-4 pt-4 border-t border-sidebar-border flex items-center gap-3">
-            <Avatar className="w-10 h-10 border border-border">
-              <AvatarImage src={user?.imageUrl} />
-              <AvatarFallback>{user?.firstName?.charAt(0) || "U"}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
-                {user?.fullName || "Usuario"}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">
-                {user?.primaryEmailAddress?.emailAddress}
-              </p>
-            </div>
-            <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sair" className="shrink-0 text-muted-foreground hover:text-destructive">
-              <LogOut className="w-5 h-5" />
-            </Button>
-          </div>
+          {isDemoMode ? <DemoUserSection /> : <ClerkUserSection />}
         </div>
       </aside>
     </>
