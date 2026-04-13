@@ -81,10 +81,10 @@ export default function VendaDetail() {
               <span className="text-muted-foreground">Subtotal</span>
               <span>{formatCurrency(venda.valorTotal)}</span>
             </div>
-            {venda.desconto > 0 && (
+            {(venda.desconto ?? 0) > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Desconto</span>
-                <span className="text-green-600">-{formatCurrency(venda.desconto)}</span>
+                <span className="text-green-600">-{formatCurrency(venda.desconto ?? 0)}</span>
               </div>
             )}
             <div className="flex justify-between text-sm font-bold border-t pt-2">

@@ -69,8 +69,8 @@ export default function Catalogo() {
     });
   };
 
-  const margem = (custo: number | null, venda: number) => {
-    if (!custo || custo === 0) return null;
+  const margem = (custo: number | null | undefined, venda: number | undefined) => {
+    if (!custo || custo === 0 || !venda) return null;
     return ((venda - custo) / custo * 100).toFixed(0);
   };
 
@@ -153,7 +153,7 @@ export default function Catalogo() {
       ) : produtos && produtos.length > 0 ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {produtos.map((p) => {
-            const m = margem(p.precoCusto, p.precoVenda);
+            const m = margem(p.precoCusto, p.precoVenda ?? 0);
             return (
               <Card key={p.id}>
                 <CardContent className="p-4">
@@ -174,7 +174,7 @@ export default function Catalogo() {
                   {p.descricao && <p className="text-sm text-muted-foreground mb-3">{p.descricao}</p>}
                   <div className="flex items-center justify-between text-sm">
                     <div>
-                      {p.precoCusto !== null && (
+                      {p.precoCusto != null && (
                         <p className="text-muted-foreground">Custo: {formatCurrency(p.precoCusto)}</p>
                       )}
                       <p className="font-semibold text-foreground text-lg">{formatCurrency(p.precoVenda)}</p>
