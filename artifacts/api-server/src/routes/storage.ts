@@ -1,5 +1,4 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { Readable } from "stream";
 import { RequestUploadUrlBody, RequestUploadUrlResponse } from "@workspace/api-zod";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth";
@@ -9,13 +8,6 @@ const objectStorageService = new ObjectStorageService();
 
 /**
  * POST /storage/uploads/request-url
- *
- * Request a presigned URL for direct file upload to object storage.
- * The client sends JSON metadata (name, size, contentType) — NOT the file itself.
- * The client then uploads directly to the returned presigned URL.
- *
- * Requires authentication to prevent anonymous cost-abuse.
- * Upload paths are namespaced per userId.
  */
 router.post("/storage/uploads/request-url", requireAuth, async (req: Request, res: Response) => {
   const { userId } = req as AuthRequest;
@@ -52,63 +44,28 @@ router.post("/storage/uploads/request-url", requireAuth, async (req: Request, re
 });
 
 /**
- * GET /storage/public-objects/*
- *
- * Serve public assets from PUBLIC_OBJECT_SEARCH_PATHS.
- * Unconditionally public — no auth required.
- */
-router.get("/storage/public-objects/*filePath", async (req: Request, res: Response) => {
-  try {
-    const raw = req.params.filePath;
-    const filePath = Array.isArray(raw) ? raw.join("/") : raw;
-    const file = await objectStorageService.searchPublicObject(filePath);
-    if (!file) {
-      res.status(404).json({ error: "File not found" });
-      return;
-    }
-
-    const response = await objectStorageService.downloadObject(file);
-
-    res.status(response.status);
-    response.headers.forEach((value, key) => res.setHeader(key, value));
-
-    if (response.body) {
-      const nodeStream = Readable.fromWeb(response.body as ReadableStream<Uint8Array>);
-      nodeStream.pipe(res);
-    } else {
-      res.end();
-    }
-  } catch (error) {
-    req.log.error({ err: error }, "Error serving public object");
-    res.status(500).json({ error: "Failed to serve public object" });
-  }
-});
-
-/**
  * GET /storage/objects/uploads/*
- *
- * Serve catalog assets (logos, banners) uploaded through this app.
- * Scoped to the uploads/ sub-directory only — the path prefix used by
- * getObjectEntityUploadURL(). Public read; upload is auth-gated.
  */
 router.get("/storage/objects/uploads/*path", async (req: Request, res: Response) => {
   try {
     const raw = req.params.path;
     const wildcardPath = Array.isArray(raw) ? raw.join("/") : raw;
     const objectPath = `/objects/uploads/${wildcardPath}`;
-    const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
+    const file = await objectStorageService.getObjectEntityFile(objectPath);
 
-    const response = await objectStorageService.downloadObject(objectFile);
-
-    res.status(response.status);
-    response.headers.forEach((value, key) => res.setHeader(key, value));
-
-    if (response.body) {
-      const nodeStream = Readable.fromWeb(response.body as ReadableStream<Uint8Array>);
-      nodeStream.pipe(res);
-    } else {
-      res.end();
+    res.setHeader("Content-Type", file.metadata["Content-Type"] || "application/octet-stream");
+    res.setHeader("Cache-Control", file.metadata["Cache-Control"] || "public, max-age=3600");
+    if (file.metadata["Content-Length"]) {
+      res.setHeader("Content-Length", file.metadata["Content-Length"]);
     }
+
+    const reader = file.body.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      res.write(value);
+    }
+    res.end();
   } catch (error) {
     if (error instanceof ObjectNotFoundError) {
       req.log.warn({ err: error }, "Object not found");
