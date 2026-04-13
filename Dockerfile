@@ -1,4 +1,4 @@
-FROM node:22-alpine AS base
+FROM node:22-slim AS base
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
@@ -22,22 +22,26 @@ COPY --from=deps /app/lib/*/node_modules ./lib/
 COPY . .
 RUN pnpm run build
 
-# Production api-server
-FROM base AS api-server
+# Production api-server — use same base to preserve symlinks
+FROM node:22-slim AS api-server
+RUN corepack enable && corepack prepare pnpm@latest --activate
+WORKDIR /app
 COPY --from=build /app/artifacts/api-server/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/artifacts/api-server/node_modules ./artifacts/api-server/node_modules
+# Resolve pnpm symlinks by reinstalling with hoisted mode
+COPY --from=build /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
 COPY --from=build /app/lib/db/package.json ./lib/db/package.json
 COPY --from=build /app/lib/api-zod/package.json ./lib/api-zod/package.json
+COPY --from=build /app/artifacts/api-server/package.json ./artifacts/api-server/package.json
+COPY --from=build /app/artifacts/rifeiro-app/package.json ./artifacts/rifeiro-app/package.json
+RUN echo 'node-linker=hoisted' > .npmrc && pnpm install --frozen-lockfile --prod
 
 ENV NODE_ENV=production
 EXPOSE 3000
-
-CMD ["node", "artifacts/api-server/dist/index.mjs"]
+CMD ["node", "dist/index.mjs"]
 
 # Production rifeiro-app (nginx)
 FROM nginx:alpine AS rifeiro-app
-COPY --from=build /app/artifacts/rifeiro-app/dist /usr/share/nginx/html
+COPY --from=build /app/artifacts/rifeiro-app/dist/public /usr/share/nginx/html
 COPY artifacts/rifeiro-app/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
