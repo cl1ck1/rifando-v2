@@ -11,7 +11,8 @@ import {
   LogOut,
   X,
   MapPin,
-  Palette
+  Palette,
+  Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,6 +23,7 @@ const navItems = [
   { name: "Rotas", href: "/rotas", icon: MapPin },
   { name: "Clientes", href: "/clientes", icon: Users },
   { name: "Parcelas", href: "/parcelas", icon: CalendarCheck },
+  { name: "Cobranças", href: "/cobrancas", icon: Bell },
   { name: "Produtos", href: "/catalogo", icon: Package },
 ];
 

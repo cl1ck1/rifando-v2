@@ -16,6 +16,7 @@ export const configuracoesTable = pgTable("configuracoes", {
   estado: text("estado"),
   chavePix: text("chave_pix"),
   mensagemBoasVindas: text("mensagem_boas_vindas"),
+  mensagemCobranca: text("mensagem_cobranca"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -13,6 +13,7 @@ import rotasRouter from "./rotas";
 import lojaBannersRouter from "./lojaBanners";
 import storageRouter from "./storage";
 import demoRouter from "./demo";
+import cobrancasRouter from "./cobrancas";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(categoriasRouter);
 router.use(configuracoesRouter);
 router.use(lojaBannersRouter);
 router.use(promissoriaRouter);
+router.use(cobrancasRouter);
 
 export default router;
