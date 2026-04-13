@@ -33,9 +33,8 @@ function stripBase(path: string): string {
     : path;
 }
 
-if (!clerkPubKey) {
-  throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY in .env file");
-}
+// Demo mode: skip Clerk if no publishable key
+const isDemoMode = !clerkPubKey;
 
 function DemoLoginButton() {
   const [loading, setLoading] = useState(false);
@@ -101,6 +100,9 @@ function SignUpPage() {
 }
 
 function HomeRedirect() {
+  if (isDemoMode) {
+    return <Redirect to="/painel" />;
+  }
   return (
     <>
       <Show when="signed-in">
@@ -114,6 +116,13 @@ function HomeRedirect() {
 }
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  if (isDemoMode) {
+    return (
+      <DashboardLayout>
+        <Component />
+      </DashboardLayout>
+    );
+  }
   return (
     <>
       <Show when="signed-in">
@@ -150,20 +159,10 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
-function AppRouter() {
-  const [, setLocation] = useLocation();
-
+function AppRouterInner() {
   return (
-    <ClerkProvider
-      publishableKey={clerkPubKey}
-      proxyUrl={clerkProxyUrl}
-      routerPush={(to) => setLocation(stripBase(to))}
-      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
-    >
-      <QueryClientProvider client={queryClient}>
-        <ClerkQueryClientCacheInvalidator />
-        <TooltipProvider>
-          <Switch>
+    <TooltipProvider>
+      <Switch>
             <Route path="/" component={HomeRedirect} />
             <Route path="/sign-in/*?" component={SignInPage} />
             <Route path="/sign-up/*?" component={SignUpPage} />
@@ -186,8 +185,32 @@ function AppRouter() {
 
             <Route component={NotFound} />
           </Switch>
-          <Toaster />
-        </TooltipProvider>
+        <Toaster />
+      </TooltipProvider>
+  );
+}
+
+function AppRouter() {
+  const [, setLocation] = useLocation();
+
+  if (isDemoMode) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <AppRouterInner />
+      </QueryClientProvider>
+    );
+  }
+
+  return (
+    <ClerkProvider
+      publishableKey={clerkPubKey!}
+      proxyUrl={clerkProxyUrl}
+      routerPush={(to) => setLocation(stripBase(to))}
+      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
+    >
+      <QueryClientProvider client={queryClient}>
+        <ClerkQueryClientCacheInvalidator />
+        <AppRouterInner />
       </QueryClientProvider>
     </ClerkProvider>
   );
