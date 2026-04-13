@@ -6,6 +6,11 @@ export interface AuthRequest extends Request {
 }
 
 export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+  // Demo mode: skip auth if no Clerk key
+  if (!process.env.CLERK_SECRET_KEY) {
+    (req as AuthRequest).userId = "demo-user";
+    return next();
+  }
   const auth = getAuth(req);
   const userId = auth?.sessionClaims?.userId || auth?.userId;
   if (!userId) {

@@ -34,7 +34,12 @@ app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(clerkMiddleware());
+// Clerk middleware - skip if no secret key (demo/dev mode)
+if (process.env.CLERK_SECRET_KEY) {
+  app.use(clerkMiddleware());
+} else {
+  logger.warn("CLERK_SECRET_KEY not set — running without auth (demo mode)");
+}
 
 app.use("/api", router);
 
