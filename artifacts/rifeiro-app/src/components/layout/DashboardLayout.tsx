@@ -4,6 +4,7 @@ import { Sidebar } from "./Sidebar";
 import { Button } from "@/components/ui/button";
 import { Menu, Settings, Sun, Moon } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
+import { NotificacoesBell } from "@/components/NotificacoesBell";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -25,6 +26,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <div className="hidden lg:block" />
 
           <div className="flex items-center gap-1 ml-auto">
+            <NotificacoesBell />
             <Link href="/configuracoes">
               <Button variant="ghost" size="icon" title="Configuracoes">
                 <Settings className="w-4 h-4" />

@@ -32,6 +32,10 @@ function mapCliente(c: typeof clientesTable.$inferSelect) {
     totalCompras: Number(c.totalCompras),
     tagLocalizacao: c.tagLocalizacao,
     rotaParadaId: c.rotaParadaId,
+    tags: c.tags || [],
+    score: c.score || 0,
+    ultimoContato: c.ultimoContato,
+    observacoesCrm: c.observacoesCrm,
     createdAt: c.createdAt.toISOString(),
   };
 }
@@ -207,6 +211,13 @@ router.patch("/clientes/:id", requireAuth, async (req, res): Promise<void> => {
   if (data.status !== undefined) updates.status = data.status;
   if (data.tagLocalizacao !== undefined) updates.tagLocalizacao = data.tagLocalizacao ?? null;
   if (data.rotaParadaId !== undefined) updates.rotaParadaId = data.rotaParadaId ?? null;
+
+  // Campos CRM
+  const crmData = req.body as { tags?: string[]; score?: number; ultimoContato?: string; observacoesCrm?: string };
+  if (crmData.tags !== undefined) updates.tags = JSON.stringify(crmData.tags);
+  if (crmData.score !== undefined) updates.score = crmData.score;
+  if (crmData.ultimoContato !== undefined) updates.ultimoContato = crmData.ultimoContato ?? null;
+  if (crmData.observacoesCrm !== undefined) updates.observacoesCrm = crmData.observacoesCrm ?? null;
 
   const [updated] = await db.update(clientesTable).set(updates).where(eq(clientesTable.id, id)).returning();
 

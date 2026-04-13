@@ -14,6 +14,7 @@ import lojaBannersRouter from "./lojaBanners";
 import storageRouter from "./storage";
 import demoRouter from "./demo";
 import cobrancasRouter from "./cobrancas";
+import notificacoesRouter from "./notificacoes";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use(configuracoesRouter);
 router.use(lojaBannersRouter);
 router.use(promissoriaRouter);
 router.use(cobrancasRouter);
+router.use(notificacoesRouter);
 
 export default router;

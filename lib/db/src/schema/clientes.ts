@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, numeric, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, numeric, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { rotaParadasTable } from "./rotaParadas";
 
 export const clientesTable = pgTable("clientes", {
@@ -18,6 +18,10 @@ export const clientesTable = pgTable("clientes", {
   totalCompras: numeric("total_compras", { precision: 12, scale: 2 }).notNull().default("0"),
   tagLocalizacao: text("tag_localizacao"),
   rotaParadaId: integer("rota_parada_id").references(() => rotaParadasTable.id, { onDelete: "set null" }),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  score: integer("score").default(0),
+  ultimoContato: text("ultimo_contato"),
+  observacoesCrm: text("observacoes_crm"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

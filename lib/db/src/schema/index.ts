@@ -3,6 +3,7 @@ export * from "./vendas";
 export * from "./venda_itens";
 export * from "./parcelas";
 export * from "./cobrancaLogs";
+export * from "./notificacoes";
 export * from "./produtos";
 export * from "./categorias";
 export * from "./configuracoes";
